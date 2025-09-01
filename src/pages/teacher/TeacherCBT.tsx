@@ -51,7 +51,28 @@ const TeacherCBT: React.FC = () => {
 
   const classes = ['XII IPA 1', 'XI IPA 2', 'X MIPA 1'];
 
+  // Pagination state (persistent)
+  const getInitialPage = () => {
+    const saved = window.localStorage.getItem('teacherCBTPage');
+    return saved ? parseInt(saved) : 1;
+  };
+  const getInitialShow = () => {
+    const saved = window.localStorage.getItem('teacherCBTShow');
+    return saved ? parseInt(saved) : 10;
+  };
+
+  const [page, setPage] = useState<number>(getInitialPage());
+  const [show, setShow] = useState<number>(getInitialShow());
+  React.useEffect(() => {
+    window.localStorage.setItem('teacherCBTPage', page.toString());
+  }, [page]);
+  React.useEffect(() => {
+    window.localStorage.setItem('teacherCBTShow', show.toString());
+  }, [show]);
+
   const filteredSessions = cbtSessions.filter(session => session.class === selectedClass);
+  const totalPages = Math.ceil(filteredSessions.length / show);
+  const paginatedSessions = filteredSessions.slice((page - 1) * show, page * show);
 
   const columns = [
     {
@@ -98,7 +119,7 @@ const TeacherCBT: React.FC = () => {
       header: 'Actions',
       render: (session: any) => (
         <div className="flex gap-1">
-          <Button variant="ghost" size="sm">
+          <Button variant="ghost" size="sm" onClick={() => window.location.href = `/teacher/CBTViewParticipants?id=${session.id}`}>
             <Eye className="h-4 w-4" />
           </Button>
           <Button variant="ghost" size="sm">
@@ -127,7 +148,7 @@ const TeacherCBT: React.FC = () => {
         </Button>
       </div>
 
-      <div className="grid md:grid-cols-4 gap-6 mb-6">
+      <div className="grid md:grid-cols-3 gap-6 mb-6">
         <Card className="text-center">
           <FileText className="h-8 w-8 text-primary-600 mx-auto mb-3" />
           <h3 className="font-semibold text-primary-900 mb-1">Total CBT</h3>
@@ -142,11 +163,6 @@ const TeacherCBT: React.FC = () => {
           <Users className="h-8 w-8 text-accent-600 mx-auto mb-3" />
           <h3 className="font-semibold text-primary-900 mb-1">Participants</h3>
           <p className="text-2xl font-bold text-accent-700">156</p>
-        </Card>
-        <Card className="text-center">
-          <FileText className="h-8 w-8 text-warning-600 mx-auto mb-3" />
-          <h3 className="font-semibold text-primary-900 mb-1">Avg Score</h3>
-          <p className="text-2xl font-bold text-warning-700">84.2</p>
         </Card>
       </div>
 
@@ -163,10 +179,51 @@ const TeacherCBT: React.FC = () => {
           </select>
         </div>
 
-        <Table 
-          columns={columns} 
-          data={filteredSessions}
-        />
+        <div className="flex flex-col md:flex-row items-center justify-between mb-4 gap-3">
+          <div className="flex gap-2 items-center">
+            <span className="text-sm">Show</span>
+            <select value={show} onChange={e => { setShow(Number(e.target.value)); setPage(1); }} className="border rounded px-2 py-1 focus:ring-primary-500 focus:border-primary-500">
+              {[10, 50, 100].map(opt => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+            <span className="text-sm">per page</span>
+          </div>
+          <div className="flex gap-2 items-center">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page === 1}
+              onClick={() => setPage(page - 1)}
+              className="px-2 py-1"
+            >
+              Previous
+            </Button>
+            <span className="text-sm">Page</span>
+            <select value={page} onChange={e => setPage(Number(e.target.value))} className="border rounded px-2 py-1 focus:ring-primary-500 focus:border-primary-500">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
+            <span className="text-sm">of {totalPages}</span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page === totalPages || totalPages === 0}
+              onClick={() => setPage(page + 1)}
+              className="px-2 py-1"
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <Table 
+            columns={columns} 
+            data={paginatedSessions}
+          />
+        </div>
       </Card>
 
       <Modal

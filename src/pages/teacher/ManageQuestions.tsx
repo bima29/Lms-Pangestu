@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Plus, Edit, Trash2, FileText, Image, Video, Volume2 } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import Modal from '../../components/ui/Modal';
@@ -30,7 +31,51 @@ const initialQuestions: Question[] = [
   }
 ];
 
+// Dummy CBT data (should be replaced with API or context)
+const cbtSessions = [
+  {
+    id: '1',
+    title: 'Ujian Tengah Semester - Matematika',
+    class: 'XII IPA 1',
+    duration: 90,
+    questions: 25,
+    status: 'active',
+    participants: 28,
+    totalStudents: 32,
+    startDate: '2025-01-15',
+    endDate: '2025-01-15'
+  },
+  {
+    id: '2',
+    title: 'Quiz Integral',
+    class: 'XII IPA 1',
+    duration: 30,
+    questions: 10,
+    status: 'completed',
+    participants: 32,
+    totalStudents: 32,
+    startDate: '2025-01-10',
+    endDate: '2025-01-10'
+  },
+  {
+    id: '3',
+    title: 'Latihan Soal Trigonometri',
+    class: 'XI IPA 2',
+    duration: 45,
+    questions: 15,
+    status: 'scheduled',
+    participants: 0,
+    totalStudents: 30,
+    startDate: '2025-01-20',
+    endDate: '2025-01-20'
+  }
+];
+
 const ManageQuestions: React.FC = () => {
+  const navigate = useNavigate();
+  const params = useParams();
+  const cbtId = params.id || (window.location.pathname.split('/').pop());
+  const cbtDetail = cbtSessions.find(cbt => cbt.id === cbtId);
   const [questions, setQuestions] = useState<Question[]>(initialQuestions);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -90,47 +135,62 @@ const ManageQuestions: React.FC = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Kelola Soal</h1>
-        <Button onClick={() => handleOpenModal()}>
-          <Plus className="h-4 w-4 mr-2" />
-          Tambah Soal
-        </Button>
+  <div className="space-y-6 max-w-7xl mx-auto">
+      {/* CBT Detail & Back Button */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+        <div>
+          <h1 className="text-2xl font-bold">Kelola Soal</h1>
+          {cbtDetail && (
+            <div className="mt-2">
+              <span className="block text-lg font-semibold text-primary-700">CBT: {cbtDetail.title}</span>
+              <span className="block text-sm text-gray-600">Kelas: {cbtDetail.class} &bull; {cbtDetail.questions} soal &bull; {cbtDetail.duration} menit</span>
+              <span className="block text-sm text-gray-500">Tanggal: {cbtDetail.startDate}</span>
+            </div>
+          )}
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => navigate(-1)}>
+            Kembali
+          </Button>
+          <Button onClick={() => handleOpenModal()}>
+            <Plus className="h-4 w-4 mr-2" />
+            Tambah Soal
+          </Button>
+        </div>
       </div>
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200 rounded-lg shadow">
-          <thead className="bg-gray-50">
+  <div className="overflow-x-auto rounded-lg shadow-lg bg-white">
+  <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gradient-to-r from-primary-50 to-primary-100">
             <tr>
-              <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">No</th>
-              <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Tipe</th>
-              <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Soal</th>
-              <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Media/Opsi</th>
-              <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Jawaban</th>
-              <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Aksi</th>
+              <th className="px-2 sm:px-4 py-2 text-left text-xs font-semibold text-primary-700">No</th>
+              <th className="px-2 sm:px-4 py-2 text-left text-xs font-semibold text-primary-700">Tipe</th>
+              <th className="px-2 sm:px-4 py-2 text-left text-xs font-semibold text-primary-700">Soal</th>
+              <th className="px-2 sm:px-4 py-2 text-left text-xs font-semibold text-primary-700">Media/Opsi</th>
+              <th className="px-2 sm:px-4 py-2 text-left text-xs font-semibold text-primary-700">Jawaban</th>
+              <th className="px-2 sm:px-4 py-2 text-left text-xs font-semibold text-primary-700">Aksi</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-white divide-y divide-gray-100">
             {questions.map((q, idx) => (
-              <tr key={q.id} className="hover:bg-gray-50">
-                <td className="px-4 py-2 text-sm text-gray-900">{idx + 1}</td>
-                <td className="px-4 py-2 text-sm text-gray-900">
-                  {q.type === 'text' && <span className="inline-flex items-center gap-1"><FileText className="h-4 w-4 inline" />Text</span>}
-                  {q.type === 'image' && <span className="inline-flex items-center gap-1"><Image className="h-4 w-4 inline" />Image</span>}
-                  {q.type === 'audio' && <span className="inline-flex items-center gap-1"><Volume2 className="h-4 w-4 inline" />Audio</span>}
-                  {q.type === 'video' && <span className="inline-flex items-center gap-1"><Video className="h-4 w-4 inline" />Video</span>}
-                  {q.type === 'multiple_choice' && <span className="inline-flex items-center gap-1"><FileText className="h-4 w-4 inline" />Pilihan Ganda</span>}
+              <tr key={q.id} className="hover:bg-primary-50 transition-all">
+                <td className="px-2 sm:px-4 py-2 text-sm text-gray-900 font-semibold">{idx + 1}</td>
+                <td className="px-2 sm:px-4 py-2 text-sm text-gray-900">
+                  {q.type === 'text' && <span className="inline-flex items-center gap-1"><FileText className="h-4 w-4 inline text-primary-600" />Text</span>}
+                  {q.type === 'image' && <span className="inline-flex items-center gap-1"><Image className="h-4 w-4 inline text-primary-600" />Image</span>}
+                  {q.type === 'audio' && <span className="inline-flex items-center gap-1"><Volume2 className="h-4 w-4 inline text-primary-600" />Audio</span>}
+                  {q.type === 'video' && <span className="inline-flex items-center gap-1"><Video className="h-4 w-4 inline text-primary-600" />Video</span>}
+                  {q.type === 'multiple_choice' && <span className="inline-flex items-center gap-1"><FileText className="h-4 w-4 inline text-primary-600" />Pilihan Ganda</span>}
                 </td>
-                <td className="px-4 py-2 text-sm text-gray-900">{q.content}</td>
-                <td className="px-4 py-2 text-sm">
+                <td className="px-2 sm:px-4 py-2 text-sm text-gray-900 max-w-xs truncate">{q.content}</td>
+                <td className="px-2 sm:px-4 py-2 text-sm">
                   {q.type === 'image' && q.mediaUrl && (
-                    <img src={q.mediaUrl} alt="Soal Gambar" className="max-w-[120px] rounded" />
+                    <img src={q.mediaUrl} alt="Soal Gambar" className="max-w-[120px] rounded shadow" />
                   )}
                   {q.type === 'audio' && q.mediaUrl && (
                     <audio controls src={q.mediaUrl} className="w-full" />
                   )}
                   {q.type === 'video' && q.mediaUrl && (
-                    <video controls src={q.mediaUrl} className="max-w-[120px]" />
+                    <video controls src={q.mediaUrl} className="max-w-[120px] rounded" />
                   )}
                   {q.type === 'multiple_choice' && q.options && (
                     <ul className="list-decimal ml-5">
@@ -143,11 +203,11 @@ const ManageQuestions: React.FC = () => {
                   )}
                   {q.type === 'text' && <span className="text-gray-500">-</span>}
                 </td>
-                <td className="px-4 py-2 text-sm text-green-700">
+                <td className="px-2 sm:px-4 py-2 text-sm text-green-700 font-semibold">
                   {q.type === 'multiple_choice' && q.options ? q.options[q.correctOption ?? 0] : q.answer}
                 </td>
-                <td className="px-4 py-2 text-sm">
-                  <div className="flex gap-2">
+                <td className="px-2 sm:px-4 py-2 text-sm">
+                  <div className="flex gap-2 flex-wrap">
                     <Button variant="ghost" size="sm" onClick={() => handleOpenModal(q)}>
                       <Edit className="h-4 w-4" />
                     </Button>
@@ -165,8 +225,19 @@ const ManageQuestions: React.FC = () => {
             )}
           </tbody>
         </table>
+        <div className="flex flex-col sm:flex-row items-center gap-3 py-4 sm:pl-4">
+          <Button
+            variant="primary"
+            size="md"
+            onClick={() => {
+              window.localStorage.setItem('questionsArray', JSON.stringify(questions));
+            }}
+          >
+            Simpan Array
+          </Button>
+        </div>
       </div>
-      <Modal
+  <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title={editId ? 'Edit Soal' : 'Tambah Soal'}

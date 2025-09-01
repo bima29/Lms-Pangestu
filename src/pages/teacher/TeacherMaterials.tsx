@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { BookOpen, Upload, File, Download, Plus } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
@@ -9,7 +10,7 @@ const TeacherMaterials: React.FC = () => {
   const [selectedClass, setSelectedClass] = useState('XII IPA 1');
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const materials = [
+  const initialMaterials = [
     { 
       id: '1', 
       title: 'Integral Tak Tentu', 
@@ -37,11 +38,41 @@ const TeacherMaterials: React.FC = () => {
       downloads: 30,
       class: 'XII IPA 1'
     },
+    // Tambahkan data dummy lain jika perlu
   ];
+
+  // Persistent page state using localStorage
+  const getInitialPage = () => {
+    const saved = window.localStorage.getItem('teacherMaterialsPage');
+    return saved ? parseInt(saved) : 1;
+  };
+  const getInitialShow = () => {
+    const saved = window.localStorage.getItem('teacherMaterialsShow');
+    return saved ? parseInt(saved) : 5;
+  };
+
+  const [materials, setMaterials] = useState(initialMaterials);
+  const [page, setPage] = useState<number>(getInitialPage());
+  const [show, setShow] = useState<number>(getInitialShow());
+
+  // Save page/show to localStorage on change
+  React.useEffect(() => {
+    window.localStorage.setItem('teacherMaterialsPage', page.toString());
+  }, [page]);
+  React.useEffect(() => {
+    window.localStorage.setItem('teacherMaterialsShow', show.toString());
+  }, [show]);
 
   const classes = ['XII IPA 1', 'XI IPA 2', 'X MIPA 1'];
 
   const filteredMaterials = materials.filter(material => material.class === selectedClass);
+  const totalPages = Math.ceil(filteredMaterials.length / show);
+  const paginatedMaterials = filteredMaterials.slice((page - 1) * show, page * show);
+
+  // Delete material
+  const handleDeleteMaterial = (id: string) => {
+    setMaterials(prev => prev.filter(m => m.id !== id));
+  };
 
   const getFileIcon = () => {
     return File;
@@ -73,8 +104,47 @@ const TeacherMaterials: React.FC = () => {
           </select>
         </div>
 
-        <div className="grid gap-4">
-          {filteredMaterials.map((material) => {
+        <div className="flex flex-col md:flex-row items-center justify-between mb-4 gap-3">
+          <div className="flex gap-2 items-center">
+            <span className="text-sm">Show</span>
+            <select value={show} onChange={e => { setShow(Number(e.target.value)); setPage(1); }} className="border rounded px-2 py-1 focus:ring-primary-500 focus:border-primary-500">
+              {[6, 12, 18, 24, 30, 36, 42, 48, 54, 60].map(opt => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+            <span className="text-sm">per page</span>
+          </div>
+          <div className="flex gap-2 items-center">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page === 1}
+              onClick={() => setPage(page - 1)}
+              className="px-2 py-1"
+            >
+              Previous
+            </Button>
+            <span className="text-sm">Page</span>
+            <select value={page} onChange={e => setPage(Number(e.target.value))} className="border rounded px-2 py-1 focus:ring-primary-500 focus:border-primary-500">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
+            <span className="text-sm">of {totalPages}</span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page === totalPages || totalPages === 0}
+              onClick={() => setPage(page + 1)}
+              className="px-2 py-1"
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+
+  <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
+          {paginatedMaterials.map((material) => {
             const FileIcon = getFileIcon();
             return (
               <div key={material.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
@@ -89,7 +159,6 @@ const TeacherMaterials: React.FC = () => {
                     </p>
                   </div>
                 </div>
-                
                 <div className="flex items-center gap-3">
                   <Badge variant="secondary">
                     {material.type.toUpperCase()}
@@ -97,6 +166,9 @@ const TeacherMaterials: React.FC = () => {
                   <div className="flex gap-1">
                     <Button variant="ghost" size="sm">
                       <Download className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => handleDeleteMaterial(material.id)}>
+                      <Trash2 className="h-4 w-4 text-red-500" />
                     </Button>
                   </div>
                 </div>

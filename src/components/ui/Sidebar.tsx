@@ -4,7 +4,7 @@ import { LucideIcon } from 'lucide-react';
 
 interface SidebarItem {
   name: string;
-  path: string;
+  path: string | string[];
   icon: LucideIcon;
 }
 
@@ -25,12 +25,13 @@ const Sidebar: React.FC<SidebarProps> = ({ items }) => {
       <nav className="px-3">
         {items.map((item) => {
           const Icon = item.icon;
-          const isActive = location.pathname === item.path;
-          
+          const paths = Array.isArray(item.path) ? item.path : [item.path];
+          // Active if current path starts with any of the paths (for dynamic routes)
+          const isActive = paths.some(p => location.pathname.startsWith(p));
           return (
             <Link
-              key={item.path}
-              to={item.path}
+              key={paths[0]}
+              to={paths[0]}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg mb-1 transition-all duration-200 ${
                 isActive 
                   ? 'bg-accent-500 text-white' 

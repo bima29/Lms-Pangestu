@@ -32,6 +32,9 @@ import SchoolSubjects from './pages/school/SchoolSubjects';
 import TeacherClasses from './pages/teacher/TeacherClasses';
 import TeacherMaterials from './pages/teacher/TeacherMaterials';
 import TeacherCBT from './pages/teacher/TeacherCBT';
+import CBTViewParticipants from './pages/teacher/CBTViewParticipants';
+import ViewStudentAnswers from './pages/teacher/ViewStudentAnswers';
+import ManualCorrection from './pages/teacher/ManualCorrection';
 import TeacherAttendance from './pages/teacher/TeacherAttendance';
 import ManageQuestions from './pages/teacher/ManageQuestions';
 
@@ -86,6 +89,9 @@ function App() {
             <Route path="materials/manage-questions" element={<ManageQuestions />} />
             <Route path="manage-questions/:id" element={<ManageQuestions />} />
             <Route path="cbt" element={<TeacherCBT />} />
+            <Route path="CBTViewParticipants" element={<CBTViewParticipants />} />
+            <Route path="view-student-answers" element={<ViewStudentAnswers />} />
+            <Route path="manual-correction" element={<ManualCorrection />} />
             <Route path="attendance" element={<TeacherAttendance />} />
             <Route index element={<Navigate to="classes" replace />} />
           </Route>
