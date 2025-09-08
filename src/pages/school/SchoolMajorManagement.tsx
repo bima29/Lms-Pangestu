@@ -1,18 +1,51 @@
 import { useState, useEffect } from 'react';
-import { Edit, Trash2, Plus, Search, BookOpen, GraduationCap, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Edit, Trash2, Plus, Search, BookOpen, ChevronLeft, ChevronRight } from 'lucide-react';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Table from '../../components/ui/Table';
 import Modal from '../../components/ui/Modal';
+import { Major } from '../../types';
 
-const initialMajors = [
-  { id: 1, name: 'IPA', type: 'SMA' },
-  { id: 2, name: 'IPS', type: 'SMA' },
-  { id: 3, name: 'TKJ', type: 'SMK' },
-  { id: 4, name: 'RPL', type: 'SMK' }
+// Mock data matching database schema
+const initialMajors: Major[] = [
+  { 
+    id: 'maj-1', 
+    name: 'Ilmu Pengetahuan Alam', 
+    code: 'IPA',
+    description: 'Program studi IPA untuk siswa yang tertarik dengan sains',
+    is_active: true,
+    created_at: '2024-01-01T00:00:00Z',
+    updated_at: '2024-01-01T00:00:00Z'
+  },
+  { 
+    id: 'maj-2', 
+    name: 'Ilmu Pengetahuan Sosial', 
+    code: 'IPS',
+    description: 'Program studi IPS untuk siswa yang tertarik dengan sosial',
+    is_active: true,
+    created_at: '2024-01-01T00:00:00Z',
+    updated_at: '2024-01-01T00:00:00Z'
+  },
+  { 
+    id: 'maj-3', 
+    name: 'Teknik Komputer dan Jaringan', 
+    code: 'TKJ',
+    description: 'Program studi TKJ untuk siswa yang tertarik dengan teknologi',
+    is_active: true,
+    created_at: '2024-01-01T00:00:00Z',
+    updated_at: '2024-01-01T00:00:00Z'
+  },
+  { 
+    id: 'maj-4', 
+    name: 'Rekayasa Perangkat Lunak', 
+    code: 'RPL',
+    description: 'Program studi RPL untuk siswa yang tertarik dengan programming',
+    is_active: false,
+    created_at: '2024-01-01T00:00:00Z',
+    updated_at: '2024-01-01T00:00:00Z'
+  }
 ];
 
-type Major = { id: number; name: string; type: string };
 
 const SchoolMajorManagement = () => {
   const [majors, setMajors] = useState<Major[]>(initialMajors);
@@ -20,7 +53,8 @@ const SchoolMajorManagement = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editMajor, setEditMajor] = useState<Major | null>(null);
   const [majorName, setMajorName] = useState('');
-  const [majorType, setMajorType] = useState('SMA');
+  const [majorCode, setMajorCode] = useState('');
+  const [majorDescription, setMajorDescription] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
@@ -38,17 +72,28 @@ const SchoolMajorManagement = () => {
   // Search & Pagination
   const filteredMajors = majors.filter(m => 
     m.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    m.type.toLowerCase().includes(searchTerm.toLowerCase())
+    m.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (m.description && m.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
   const totalPages = Math.ceil(filteredMajors.length / itemsPerPage);
   const paginatedMajors = filteredMajors.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   // Add Major
   const handleAddMajor = () => {
-    if (majorName.trim()) {
-      setMajors([...majors, { id: Date.now(), name: majorName, type: majorType }]);
+    if (majorName.trim() && majorCode.trim()) {
+      const newMajor: Major = {
+        id: `maj-${Date.now()}`,
+        name: majorName,
+        code: majorCode,
+        description: majorDescription || undefined,
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      setMajors([...majors, newMajor]);
       setMajorName('');
-      setMajorType('SMA');
+      setMajorCode('');
+      setMajorDescription('');
       setIsAddModalOpen(false);
     }
   };
@@ -57,22 +102,30 @@ const SchoolMajorManagement = () => {
   const openEditModal = (major: Major) => {
     setEditMajor(major);
     setMajorName(major.name);
-    setMajorType(major.type);
+    setMajorCode(major.code);
+    setMajorDescription(major.description || '');
     setIsEditModalOpen(true);
   };
   
   const handleEditMajor = () => {
-    if (majorName.trim() && editMajor) {
-      setMajors(majors.map(m => m.id === editMajor.id ? { ...m, name: majorName, type: majorType } : m));
+    if (majorName.trim() && majorCode.trim() && editMajor) {
+      setMajors(majors.map(m => m.id === editMajor.id ? { 
+        ...m, 
+        name: majorName, 
+        code: majorCode,
+        description: majorDescription || undefined,
+        updated_at: new Date().toISOString()
+      } : m));
       setEditMajor(null);
       setMajorName('');
-      setMajorType('SMA');
+      setMajorCode('');
+      setMajorDescription('');
       setIsEditModalOpen(false);
     }
   };
 
   // Delete Major
-  const handleDeleteMajor = (id: number) => {
+  const handleDeleteMajor = (id: string) => {
     if (window.confirm('Apakah Anda yakin ingin menghapus jurusan ini?')) {
       setMajors(majors.filter(m => m.id !== id));
     }
@@ -163,16 +216,18 @@ const SchoolMajorManagement = () => {
               <Table
                 columns={[
                   { key: 'name', header: 'Nama Jurusan', render: (m) => m.name },
+                  { key: 'code', header: 'Kode', render: (m) => m.code },
+                  { key: 'description', header: 'Deskripsi', render: (m) => m.description || '-' },
                   { 
-                    key: 'type', 
-                    header: 'Tipe Sekolah',
+                    key: 'status', 
+                    header: 'Status',
                     render: (m) => (
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        m.type === 'SMA' 
-                          ? 'bg-blue-100 text-blue-800' 
-                          : 'bg-purple-100 text-purple-800'
+                        m.is_active 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-red-100 text-red-800'
                       }`}>
-                        {m.type}
+                        {m.is_active ? 'Aktif' : 'Tidak Aktif'}
                       </span>
                     )
                   },
@@ -276,41 +331,38 @@ const SchoolMajorManagement = () => {
                 value={majorName}
                 onChange={e => setMajorName(e.target.value)}
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
-                placeholder="Contoh: IPA"
+                placeholder="Contoh: Ilmu Pengetahuan Alam"
                 onKeyPress={e => e.key === 'Enter' && handleAddMajor()}
               />
             </div>
             
             <div>
-              <label htmlFor="majorType" className="block text-sm font-medium text-gray-700 mb-1">
-                Tipe Sekolah
+              <label htmlFor="majorCode" className="block text-sm font-medium text-gray-700 mb-1">
+                Kode Jurusan
               </label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setMajorType('SMA')}
-                  className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border transition-colors duration-200 ${
-                    majorType === 'SMA'
-                      ? 'bg-blue-50 border-blue-500 text-blue-700'
-                      : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <GraduationCap className="h-5 w-5" />
-                  <span>SMA</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMajorType('SMK')}
-                  className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border transition-colors duration-200 ${
-                    majorType === 'SMK'
-                      ? 'bg-purple-50 border-purple-500 text-purple-700'
-                      : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <BookOpen className="h-5 w-5" />
-                  <span>SMK</span>
-                </button>
-              </div>
+              <input
+                type="text"
+                id="majorCode"
+                value={majorCode}
+                onChange={e => setMajorCode(e.target.value)}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
+                placeholder="Contoh: IPA"
+                onKeyPress={e => e.key === 'Enter' && handleAddMajor()}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="majorDescription" className="block text-sm font-medium text-gray-700 mb-1">
+                Deskripsi (Opsional)
+              </label>
+              <textarea
+                id="majorDescription"
+                value={majorDescription}
+                onChange={e => setMajorDescription(e.target.value)}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
+                placeholder="Deskripsi jurusan..."
+                rows={3}
+              />
             </div>
             
             <div className="flex gap-3 pt-2">
@@ -323,7 +375,7 @@ const SchoolMajorManagement = () => {
               </Button>
               <Button 
                 onClick={handleAddMajor} 
-                disabled={!majorName.trim()}
+                disabled={!majorName.trim() || !majorCode.trim()}
                 className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Simpan
@@ -339,7 +391,8 @@ const SchoolMajorManagement = () => {
             setIsEditModalOpen(false);
             setEditMajor(null);
             setMajorName('');
-            setMajorType('SMA');
+            setMajorCode('');
+            setMajorDescription('');
           }} 
           title="Edit Jurusan" 
           size="md"
@@ -355,41 +408,38 @@ const SchoolMajorManagement = () => {
                 value={majorName}
                 onChange={e => setMajorName(e.target.value)}
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
-                placeholder="Contoh: IPA"
+                placeholder="Contoh: Ilmu Pengetahuan Alam"
                 onKeyPress={e => e.key === 'Enter' && handleEditMajor()}
               />
             </div>
             
             <div>
-              <label htmlFor="editMajorType" className="block text-sm font-medium text-gray-700 mb-1">
-                Tipe Sekolah
+              <label htmlFor="editMajorCode" className="block text-sm font-medium text-gray-700 mb-1">
+                Kode Jurusan
               </label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setMajorType('SMA')}
-                  className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border transition-colors duration-200 ${
-                    majorType === 'SMA'
-                      ? 'bg-blue-50 border-blue-500 text-blue-700'
-                      : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <GraduationCap className="h-5 w-5" />
-                  <span>SMA</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMajorType('SMK')}
-                  className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border transition-colors duration-200 ${
-                    majorType === 'SMK'
-                      ? 'bg-purple-50 border-purple-500 text-purple-700'
-                      : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <BookOpen className="h-5 w-5" />
-                  <span>SMK</span>
-                </button>
-              </div>
+              <input
+                type="text"
+                id="editMajorCode"
+                value={majorCode}
+                onChange={e => setMajorCode(e.target.value)}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
+                placeholder="Contoh: IPA"
+                onKeyPress={e => e.key === 'Enter' && handleEditMajor()}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="editMajorDescription" className="block text-sm font-medium text-gray-700 mb-1">
+                Deskripsi (Opsional)
+              </label>
+              <textarea
+                id="editMajorDescription"
+                value={majorDescription}
+                onChange={e => setMajorDescription(e.target.value)}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
+                placeholder="Deskripsi jurusan..."
+                rows={3}
+              />
             </div>
             
             <div className="flex gap-3 pt-2">
@@ -399,7 +449,8 @@ const SchoolMajorManagement = () => {
                   setIsEditModalOpen(false);
                   setEditMajor(null);
                   setMajorName('');
-                  setMajorType('SMA');
+                  setMajorCode('');
+                  setMajorDescription('');
                 }} 
                 className="flex-1 rounded-xl"
               >
@@ -407,7 +458,7 @@ const SchoolMajorManagement = () => {
               </Button>
               <Button 
                 onClick={handleEditMajor} 
-                disabled={!majorName.trim() || (majorName === editMajor?.name && majorType === editMajor?.type)}
+                disabled={!majorName.trim() || !majorCode.trim()}
                 className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Simpan Perubahan

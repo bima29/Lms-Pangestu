@@ -4,28 +4,42 @@ import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
 import Modal from '../../components/ui/Modal';
+import { User } from '../../types';
 
-type Document = {
+// Document interface based on database schema
+interface Document {
+  id: string;
+  title: string;
+  description?: string;
+  file_path: string;
+  file_name: string;
+  file_size: number;
+  file_type: string;
+  folder_id?: string;
+  uploaded_by: string;
+  is_public: boolean;
+  created_at: string;
+  updated_at: string;
+  uploader?: User;
+  folder?: DocumentFolder;
+}
+
+// Document folder interface
+interface DocumentFolder {
   id: string;
   name: string;
-  type: string;
-  size: string;
-  folder: string;
-  uploadDate: string;
-  uploadedBy: string;
-};
-
-type FolderType = {
-  id: string;
-  name: string;
-  count: number;
+  description?: string;
+  parent_id?: string;
   color: string;
-};
+  is_active: boolean;
+  created_at: string;
+  document_count?: number;
+}
 
 const SchoolDocuments: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
-  const [editFolder, setEditFolder] = useState<FolderType | null>(null);
+  const [editFolder, setEditFolder] = useState<DocumentFolder | null>(null);
   const [folderName, setFolderName] = useState('');
   const [selectedFolder, setSelectedFolder] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -35,69 +49,132 @@ const SchoolDocuments: React.FC = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   const [documents, setDocuments] = useState<Document[]>([
-    { 
-      id: '1', 
-      name: 'Kurikulum 2024-2025.pdf', 
-      type: 'pdf', 
-      size: '2.4 MB', 
-      folder: 'academic',
-      uploadDate: '15 Des 2024',
-      uploadedBy: 'Admin Sekolah'
+    {
+      id: '1',
+      title: 'Kurikulum 2024-2025',
+      description: 'Dokumen kurikulum untuk tahun ajaran 2024-2025',
+      file_path: '/documents/kurikulum-2024-2025.pdf',
+      file_name: 'Kurikulum 2024-2025.pdf',
+      file_size: 2516582, // 2.4 MB in bytes
+      file_type: 'application/pdf',
+      folder_id: 'academic',
+      uploaded_by: 'admin1',
+      is_public: true,
+      created_at: '2024-12-15T00:00:00Z',
+      updated_at: '2024-12-15T00:00:00Z',
+      uploader: {
+        id: 'admin1',
+        email: 'admin@school.com',
+        name: 'Admin Sekolah',
+        role: 'school_admin',
+        is_active: true,
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z'
+      }
     },
-    { 
-      id: '2', 
-      name: 'Kalender Akademik.xlsx', 
-      type: 'xlsx', 
-      size: '856 KB', 
-      folder: 'academic',
-      uploadDate: '10 Des 2024',
-      uploadedBy: 'Admin Sekolah'
+    {
+      id: '2',
+      title: 'Kalender Akademik',
+      description: 'Kalender kegiatan akademik sekolah',
+      file_path: '/documents/kalender-akademik.xlsx',
+      file_name: 'Kalender Akademik.xlsx',
+      file_size: 876544, // 856 KB in bytes
+      file_type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      folder_id: 'academic',
+      uploaded_by: 'admin1',
+      is_public: true,
+      created_at: '2024-12-10T00:00:00Z',
+      updated_at: '2024-12-10T00:00:00Z',
+      uploader: {
+        id: 'admin1',
+        email: 'admin@school.com',
+        name: 'Admin Sekolah',
+        role: 'school_admin',
+        is_active: true,
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z'
+      }
     },
-    { 
-      id: '3', 
-      name: 'SOP Ujian Online.docx', 
-      type: 'docx', 
-      size: '1.2 MB', 
-      folder: 'policies',
-      uploadDate: '8 Des 2024',
-      uploadedBy: 'Kepala Sekolah'
-    },
-    { 
-      id: '4', 
-      name: 'Laporan Semester Ganjil.pdf', 
-      type: 'pdf', 
-      size: '5.8 MB', 
-      folder: 'reports',
-      uploadDate: '20 Des 2024',
-      uploadedBy: 'Admin Sekolah'
-    },
-    { 
-      id: '5', 
-      name: 'Foto Kegiatan Sekolah.jpg', 
-      type: 'jpg', 
-      size: '3.2 MB', 
-      folder: 'media',
-      uploadDate: '18 Des 2024',
-      uploadedBy: 'Guru Seni'
-    },
-    { 
-      id: '6', 
-      name: 'Template RPP.zip', 
-      type: 'zip', 
-      size: '8.5 MB', 
-      folder: 'templates',
-      uploadDate: '5 Des 2024',
-      uploadedBy: 'Wakil Kurikulum'
+    {
+      id: '3',
+      title: 'SOP Ujian Online',
+      description: 'Standard Operating Procedure untuk ujian online',
+      file_path: '/documents/sop-ujian-online.docx',
+      file_name: 'SOP Ujian Online.docx',
+      file_size: 1258291, // 1.2 MB in bytes
+      file_type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      folder_id: 'policies',
+      uploaded_by: 'principal1',
+      is_public: false,
+      created_at: '2024-12-08T00:00:00Z',
+      updated_at: '2024-12-08T00:00:00Z',
+      uploader: {
+        id: 'principal1',
+        email: 'principal@school.com',
+        name: 'Kepala Sekolah',
+        role: 'school_admin',
+        is_active: true,
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z'
+      }
     }
   ]);
 
-  const [folders, setFolders] = useState<FolderType[]>([
-    { id: 'academic', name: 'Akademik', count: 12, color: 'blue' },
-    { id: 'policies', name: 'Kebijakan', count: 8, color: 'green' },
-    { id: 'reports', name: 'Laporan', count: 15, color: 'purple' },
-    { id: 'forms', name: 'Formulir', count: 6, color: 'orange' },
-    { id: 'media', name: 'Media', count: 23, color: 'pink' },
-    { id: 'templates', name: 'Template', count: 9, color: 'indigo' }
+  const [folders, setFolders] = useState<DocumentFolder[]>([
+    {
+      id: 'academic',
+      name: 'Akademik',
+      description: 'Dokumen terkait akademik dan kurikulum',
+      color: 'blue',
+      is_active: true,
+      created_at: '2024-01-01T00:00:00Z',
+      document_count: 12
+    },
+    {
+      id: 'policies',
+      name: 'Kebijakan',
+      description: 'Dokumen kebijakan dan peraturan sekolah',
+      color: 'green',
+      is_active: true,
+      created_at: '2024-01-01T00:00:00Z',
+      document_count: 8
+    },
+    {
+      id: 'reports',
+      name: 'Laporan',
+      description: 'Laporan dan dokumentasi kegiatan',
+      color: 'purple',
+      is_active: true,
+      created_at: '2024-01-01T00:00:00Z',
+      document_count: 15
+    },
+    {
+      id: 'forms',
+      name: 'Formulir',
+      description: 'Template formulir dan dokumen administrasi',
+      color: 'orange',
+      is_active: true,
+      created_at: '2024-01-01T00:00:00Z',
+      document_count: 6
+    },
+    {
+      id: 'media',
+      name: 'Media',
+      description: 'File media seperti gambar dan video',
+      color: 'pink',
+      is_active: true,
+      created_at: '2024-01-01T00:00:00Z',
+      document_count: 23
+    },
+    {
+      id: 'templates',
+      name: 'Template',
+      description: 'Template dokumen untuk berbagai keperluan',
+      color: 'indigo',
+      is_active: true,
+      created_at: '2024-01-01T00:00:00Z',
+      document_count: 9
+    }
   ]);
 
   const handleDeleteDocument = (doc: Document | null) => {
@@ -113,7 +190,7 @@ const SchoolDocuments: React.FC = () => {
     setIsFolderModalOpen(true);
   };
 
-  const openEditFolderModal = (folder: FolderType) => {
+  const openEditFolderModal = (folder: DocumentFolder) => {
     setEditFolder(folder);
     setFolderName(folder.name);
     setIsFolderModalOpen(true);
@@ -125,14 +202,22 @@ const SchoolDocuments: React.FC = () => {
       setFolders(folders.map(f => f.id === editFolder.id ? { ...f, name: folderName } : f));
     } else {
       const newId = folderName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '') + '-' + Date.now();
-      setFolders([...folders, { id: newId, name: folderName, count: 0, color: 'gray' }]);
+      const newFolder: DocumentFolder = {
+        id: newId,
+        name: folderName,
+        color: 'gray',
+        is_active: true,
+        created_at: new Date().toISOString(),
+        document_count: 0
+      };
+      setFolders([...folders, newFolder]);
     }
     setIsFolderModalOpen(false);
     setFolderName('');
     setEditFolder(null);
   };
 
-  const handleDeleteFolder = (folder: FolderType) => {
+  const handleDeleteFolder = (folder: DocumentFolder) => {
     if (window.confirm(`Hapus folder "${folder.name}" beserta semua dokumen di dalamnya?`)) {
       setFolders(folders.filter(f => f.id !== folder.id));
       if (selectedFolder === folder.id) setSelectedFolder('all');
@@ -140,24 +225,22 @@ const SchoolDocuments: React.FC = () => {
   };
 
   const filteredDocuments = documents.filter(doc => {
-    const matchesSearch = doc.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         doc.uploadedBy.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFolder = selectedFolder === 'all' || doc.folder === selectedFolder;
+    const matchesSearch = doc.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                         (doc.uploader?.name || '').toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFolder = selectedFolder === 'all' || doc.folder_id === selectedFolder;
     return matchesSearch && matchesFolder;
   });
 
   const totalPages = Math.ceil(filteredDocuments.length / itemsPerPage);
   const paginatedDocuments = filteredDocuments.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  const getFileIcon = (type: string) => {
-    switch (type) {
-      case 'pdf': return FileText;
-      case 'docx': return File;
-      case 'xlsx': return FileSpreadsheet;
-      case 'jpg': case 'png': return Image;
-      case 'zip': case 'rar': return FileArchive;
-      default: return FileCode;
-    }
+  const getFileIcon = (fileType: string) => {
+    if (fileType.includes('pdf')) return FileText;
+    if (fileType.includes('word') || fileType.includes('document')) return File;
+    if (fileType.includes('spreadsheet') || fileType.includes('excel')) return FileSpreadsheet;
+    if (fileType.includes('image')) return Image;
+    if (fileType.includes('zip') || fileType.includes('archive')) return FileArchive;
+    return FileCode;
   };
 
   const getFolderColor = (color: string) => {
@@ -235,7 +318,7 @@ const SchoolDocuments: React.FC = () => {
                         <span>{folder.name}</span>
                       </div>
                       <Badge variant="secondary" className="bg-gray-200 text-gray-700">
-                        {folder.count}
+                        {folder.document_count || 0}
                       </Badge>
                     </button>
                     
@@ -338,8 +421,8 @@ const SchoolDocuments: React.FC = () => {
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {paginatedDocuments.map((doc) => {
-                        const FileIcon = getFileIcon(doc.type);
-                        const folder = folders.find(f => f.id === doc.folder);
+                        const FileIcon = getFileIcon(doc.file_type);
+                        const folder = folders.find(f => f.id === doc.folder_id);
                         
                         return (
                           <div key={doc.id} className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow">
@@ -359,13 +442,13 @@ const SchoolDocuments: React.FC = () => {
                             </div>
                             
                             <div className="mb-4">
-                              <h4 className="font-medium text-gray-900 truncate">{doc.name}</h4>
-                              <p className="text-sm text-gray-500 mt-1">{doc.size}</p>
+                              <h4 className="font-medium text-gray-900 truncate">{doc.title}</h4>
+                              <p className="text-sm text-gray-500 mt-1">{(doc.file_size / 1024 / 1024).toFixed(1)} MB</p>
                             </div>
                             
                             <div className="flex items-center justify-between">
                               <Badge variant="secondary" className="text-xs">
-                                {doc.type.toUpperCase()}
+                                {doc.file_name.split('.').pop()?.toUpperCase() || 'FILE'}
                               </Badge>
                               <Button variant="ghost" size="sm" className="rounded-lg" title="Download">
                                 <Download className="h-4 w-4" />
@@ -395,8 +478,8 @@ const SchoolDocuments: React.FC = () => {
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                       {paginatedDocuments.map((doc) => {
-                        const FileIcon = getFileIcon(doc.type);
-                        const folder = folders.find(f => f.id === doc.folder);
+                        const FileIcon = getFileIcon(doc.file_type);
+                        const folder = folders.find(f => f.id === doc.folder_id);
                         
                         return (
                           <tr key={doc.id} className="hover:bg-gray-50">
@@ -406,15 +489,15 @@ const SchoolDocuments: React.FC = () => {
                                   <FileIcon className="h-5 w-5" />
                                 </div>
                                 <div>
-                                  <div className="font-medium text-gray-900">{doc.name}</div>
-                                  <div className="text-sm text-gray-500">{doc.uploadedBy}</div>
+                                  <div className="font-medium text-gray-900">{doc.title}</div>
+                                  <div className="text-sm text-gray-500">{doc.uploader?.name || 'Unknown'}</div>
                                 </div>
                               </div>
                             </td>
                             <td className="px-4 py-3">
-                              <Badge variant="secondary">{doc.type.toUpperCase()}</Badge>
+                              <Badge variant="secondary">{doc.file_name.split('.').pop()?.toUpperCase() || 'FILE'}</Badge>
                             </td>
-                            <td className="px-4 py-3 text-sm text-gray-900">{doc.size}</td>
+                            <td className="px-4 py-3 text-sm text-gray-900">{(doc.file_size / 1024 / 1024).toFixed(1)} MB</td>
                             <td className="px-4 py-3">
                               {folder && (
                                 <Badge className={`text-xs ${getFolderColor(folder.color)}`}>
@@ -422,7 +505,7 @@ const SchoolDocuments: React.FC = () => {
                                 </Badge>
                               )}
                             </td>
-                            <td className="px-4 py-3 text-sm text-gray-500">{doc.uploadDate}</td>
+                            <td className="px-4 py-3 text-sm text-gray-500">{new Date(doc.created_at).toLocaleDateString('id-ID')}</td>
                             <td className="px-4 py-3">
                               <div className="flex justify-end gap-1">
                                 <Button variant="ghost" size="sm" title="Download" className="rounded-lg">
@@ -520,7 +603,7 @@ const SchoolDocuments: React.FC = () => {
         >
           <div className="space-y-4 py-2">
             <p className="text-gray-600">
-              Yakin ingin menghapus dokumen <span className="font-semibold text-gray-800">{deleteDoc?.name}</span>?
+              Yakin ingin menghapus dokumen <span className="font-semibold text-gray-800">{deleteDoc?.title}</span>?
             </p>
             <div className="flex gap-3 pt-2">
               <Button 

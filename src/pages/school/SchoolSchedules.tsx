@@ -1,11 +1,11 @@
-// ...existing code...
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, Plus, Search, BookOpen, Users, X, Edit, Trash2 } from 'lucide-react';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
 import Modal from '../../components/ui/Modal';
 import Select from 'react-select';
+import { Schedule } from '../../types';
 
 const SchoolSchedules: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -38,8 +38,9 @@ const SchoolSchedules: React.FC = () => {
   const [formSubject, setFormSubject] = useState<{ value: string; label: string } | null>(null);
   const [formClass, setFormClass] = useState<{ value: string; label: string } | null>(null);
   const [formTeacher, setFormTeacher] = useState<{ value: string; label: string } | null>(null);
-  const [formDay, setFormDay] = useState<string>('monday');
+  const [formDay, setFormDay] = useState<'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday'>('monday');
   const [formTime, setFormTime] = useState<string>('');
+  const [formRoom, setFormRoom] = useState<string>('');
 
   // Set formTime default ke slot waktu pertama jika ada slot waktu baru
   React.useEffect(() => {
@@ -52,7 +53,58 @@ const SchoolSchedules: React.FC = () => {
     time: string;
     [key: string]: string;
   };
-  // Inisialisasi schedule dinamis berdasarkan timeSlots
+  // Mock data for schedules using proper Schedule interface
+  const initialSchedules: Schedule[] = [
+    {
+      id: '1',
+      class_subject_id: 'cs1',
+      day_of_week: 'monday',
+      start_time: '07:00',
+      end_time: '07:45',
+      room: 'A101',
+      is_active: true,
+      created_at: '2024-01-01T00:00:00Z',
+      class_subject: {
+        id: 'cs1',
+        class_id: 'c1',
+        subject_id: 's1',
+        teacher_id: 't1',
+        semester: '1',
+        academic_year: '2024/2025',
+        created_at: '2024-01-01T00:00:00Z',
+        subject: { id: 's1', name: 'Matematika', code: 'MAT', credit_hours: 4, is_active: true, created_at: '2024-01-01T00:00:00Z' },
+        class: { id: 'c1', name: 'XII IPA 1', grade_level: 12, academic_year: '2024/2025', max_students: 30, is_active: true, created_at: '2024-01-01T00:00:00Z' },
+        teacher: { id: 't1', user_id: 'u1', employee_id: 'EMP001', specialization: 'Matematika', status: 'active', created_at: '2024-01-01T00:00:00Z', user: { id: 'u1', email: 'teacher1@school.com', name: 'Budi Santoso', role: 'teacher', is_active: true, created_at: '2024-01-01T00:00:00Z', updated_at: '2024-01-01T00:00:00Z' } }
+      }
+    },
+    {
+      id: '2',
+      class_subject_id: 'cs2',
+      day_of_week: 'tuesday',
+      start_time: '08:30',
+      end_time: '09:15',
+      room: 'B102',
+      is_active: true,
+      created_at: '2024-01-01T00:00:00Z',
+      class_subject: {
+        id: 'cs2',
+        class_id: 'c2',
+        subject_id: 's2',
+        teacher_id: 't2',
+        semester: '1',
+        academic_year: '2024/2025',
+        created_at: '2024-01-01T00:00:00Z',
+        subject: { id: 's2', name: 'Fisika', code: 'FIS', credit_hours: 3, is_active: true, created_at: '2024-01-01T00:00:00Z' },
+        class: { id: 'c2', name: 'XI IPA 1', grade_level: 11, academic_year: '2024/2025', max_students: 30, is_active: true, created_at: '2024-01-01T00:00:00Z' },
+        teacher: { id: 't2', user_id: 'u2', employee_id: 'EMP002', specialization: 'Fisika', status: 'active', created_at: '2024-01-01T00:00:00Z', user: { id: 'u2', email: 'teacher2@school.com', name: 'Siti Rahayu', role: 'teacher', is_active: true, created_at: '2024-01-01T00:00:00Z', updated_at: '2024-01-01T00:00:00Z' } }
+      }
+    }
+  ];
+
+  const [schedules, setSchedules] = useState<Schedule[]>(initialSchedules);
+  const [editSchedule, setEditSchedule] = useState<Schedule | null>(null);
+
+  // Convert schedules to slot format for display
   const [schedule, setSchedule] = useState<ScheduleSlot[]>(() =>
     [
       '07:00-07:45',
@@ -72,7 +124,29 @@ const SchoolSchedules: React.FC = () => {
     }))
   );
 
-  const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  // Update schedule display when schedules change
+  useEffect(() => {
+    const newSchedule = timeSlots.map(time => {
+      const slot: ScheduleSlot = { time };
+      days.forEach((day: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday') => {
+        const daySchedule = schedules.find(s => 
+          s.day_of_week === day && 
+          `${s.start_time}-${s.end_time}` === time &&
+          s.is_active
+        );
+        if (daySchedule && daySchedule.class_subject) {
+          const { subject, class: cls, teacher } = daySchedule.class_subject;
+          slot[day] = `${subject?.name || 'N/A'} - ${cls?.name || 'N/A'} - ${teacher?.user?.name || 'N/A'}`;
+        } else {
+          slot[day] = 'Free';
+        }
+      });
+      return slot;
+    });
+    setSchedule(newSchedule);
+  }, [schedules, timeSlots]);
+
+  const days: ('monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday')[] = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
   const dayNames = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
   const dayNamesShort = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
@@ -91,49 +165,118 @@ const SchoolSchedules: React.FC = () => {
   const [deleteSlotInfo, setDeleteSlotInfo] = useState<{slotTime: string, day: string, value: string} | null>(null);
   const openEditModal = (slotTime: string, day: string, value: string) => {
     if (value === 'Free' || value.includes('Ekstrakurikuler')) return;
-    const [subject, className, teacher] = value.split(' - ');
-    setFormSubject({ value: subject, label: subject });
-    setFormClass({ value: className, label: className });
-    setFormTeacher({ value: teacher, label: teacher });
-    setFormDay(day);
-    setFormTime(slotTime);
-    setIsEditModalOpen(true);
+    
+    // Find the actual schedule record
+    const [startTime, endTime] = slotTime.split('-');
+    const scheduleRecord = schedules.find(s => 
+      s.day_of_week === day && 
+      s.start_time === startTime && 
+      s.end_time === endTime &&
+      s.is_active
+    );
+    
+    if (scheduleRecord && scheduleRecord.class_subject) {
+      const { subject, class: cls, teacher } = scheduleRecord.class_subject;
+      setFormSubject({ value: subject?.name || '', label: subject?.name || '' });
+      setFormClass({ value: cls?.name || '', label: cls?.name || '' });
+      setFormTeacher({ value: teacher?.user?.name || '', label: teacher?.user?.name || '' });
+      setFormDay(day as 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday');
+      setFormTime(slotTime);
+      setFormRoom(scheduleRecord.room || '');
+      setEditSchedule(scheduleRecord);
+      setIsEditModalOpen(true);
+    }
   };
 
   // Function to open delete modal
   const openDeleteModal = (slotTime: string, day: string, value: string) => {
     setDeleteSlotInfo({ slotTime, day, value });
   };
-  const handleEditSchedule = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formSubject || !formClass || !formTeacher || !formDay || !formTime) return;
-    setSchedule((prev: ScheduleSlot[]) => prev.map((slot: ScheduleSlot) => {
-      if (slot.time === formTime) {
-        return {
-          ...slot,
-          [formDay]: `${formSubject.label} - ${formClass.label} - ${formTeacher.label}`
-        };
-      }
-      return slot;
-    }));
-    setIsEditModalOpen(false);
+  const resetForm = () => {
     setFormSubject(null);
     setFormClass(null);
     setFormTeacher(null);
     setFormDay('monday');
-    setFormTime('07:00-07:45');
+    setFormTime('');
+    setFormRoom('');
+    setEditSchedule(null);
+  };
+
+  const handleEditSchedule = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formSubject || !formClass || !formTeacher || !formDay || !formTime || !editSchedule) return;
+    
+    const [startTime, endTime] = formTime.split('-');
+    
+    const updatedSchedule: Schedule = {
+      ...editSchedule,
+      day_of_week: formDay,
+      start_time: startTime,
+      end_time: endTime,
+      room: formRoom,
+      class_subject: {
+        ...editSchedule.class_subject!,
+        subject: { ...editSchedule.class_subject!.subject!, name: formSubject.value },
+        class: { ...editSchedule.class_subject!.class!, name: formClass.value },
+        teacher: { ...editSchedule.class_subject!.teacher!, user: { ...editSchedule.class_subject!.teacher!.user!, name: formTeacher.value } }
+      }
+    };
+    
+    setSchedules(prev => prev.map(s => s.id === editSchedule.id ? updatedSchedule : s));
+    setIsEditModalOpen(false);
+    resetForm();
+  };
+
+  const handleAddSchedule = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formSubject || !formClass || !formTeacher || !formDay || !formTime) return;
+    
+    const [startTime, endTime] = formTime.split('-');
+    
+    const newSchedule: Schedule = {
+      id: Date.now().toString(),
+      class_subject_id: `cs_${Date.now()}`,
+      day_of_week: formDay,
+      start_time: startTime,
+      end_time: endTime,
+      room: formRoom,
+      is_active: true,
+      created_at: new Date().toISOString(),
+      class_subject: {
+        id: `cs_${Date.now()}`,
+        class_id: `c_${Date.now()}`,
+        subject_id: `s_${Date.now()}`,
+        teacher_id: `t_${Date.now()}`,
+        semester: '1',
+        academic_year: '2024/2025',
+        created_at: new Date().toISOString(),
+        subject: { id: `s_${Date.now()}`, name: formSubject.value, code: formSubject.value.substring(0, 3).toUpperCase(), credit_hours: 3, is_active: true, created_at: new Date().toISOString() },
+        class: { id: `c_${Date.now()}`, name: formClass.value, grade_level: 12, academic_year: '2024/2025', max_students: 30, is_active: true, created_at: new Date().toISOString() },
+        teacher: { id: `t_${Date.now()}`, user_id: `u_${Date.now()}`, employee_id: `EMP${Date.now()}`, status: 'active', created_at: new Date().toISOString(), user: { id: `u_${Date.now()}`, email: `${formTeacher.value.toLowerCase().replace(' ', '')}@school.com`, name: formTeacher.value, role: 'teacher', is_active: true, created_at: new Date().toISOString(), updated_at: new Date().toISOString() } }
+      }
+    };
+    
+    setSchedules(prev => [...prev, newSchedule]);
+    setIsModalOpen(false);
+    resetForm();
   };
   const handleDeleteSchedule = () => {
     if (!deleteSlotInfo) return;
-    setSchedule((prev: ScheduleSlot[]) => prev.map((slot: ScheduleSlot) => {
-      if (slot.time === deleteSlotInfo.slotTime) {
-        return {
-          ...slot,
-          [deleteSlotInfo.day]: 'Free'
-        };
-      }
-      return slot;
-    }));
+    
+    const [startTime, endTime] = deleteSlotInfo.slotTime.split('-');
+    const scheduleToDelete = schedules.find(s => 
+      s.day_of_week === (deleteSlotInfo.day as 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday') && 
+      s.start_time === startTime && 
+      s.end_time === endTime &&
+      s.is_active
+    );
+    
+    if (scheduleToDelete) {
+      setSchedules(prev => prev.map(s => 
+        s.id === scheduleToDelete.id ? { ...s, is_active: false } : s
+      ));
+    }
+    
     setDeleteSlotInfo(null);
   };
 
@@ -380,11 +523,11 @@ const SchoolSchedules: React.FC = () => {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Hari</label>
                 <Select
-                  options={days.map((d, i) => ({ value: d, label: dayNames[i] }))}
+                  options={days.map((d, i) => ({ value: d as 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday', label: dayNames[i] }))}
                   value={{ value: formDay, label: dayNames[days.indexOf(formDay)] }}
                   onChange={opt => opt && setFormDay(opt.value)}
                   isSearchable={false}
@@ -401,6 +544,16 @@ const SchoolSchedules: React.FC = () => {
                   isSearchable={false}
                   placeholder="Pilih slot waktu..."
                   classNamePrefix="react-select"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Ruangan</label>
+                <input
+                  type="text"
+                  value={formRoom}
+                  onChange={e => setFormRoom(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="Contoh: A101"
                 />
               </div>
             </div>
@@ -501,7 +654,7 @@ const SchoolSchedules: React.FC = () => {
           title="Tambah Jadwal Baru"
           size="lg"
         >
-          <form className="space-y-4 py-2">
+          <form className="space-y-4 py-2" onSubmit={handleAddSchedule}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Mata Pelajaran</label>
@@ -527,11 +680,11 @@ const SchoolSchedules: React.FC = () => {
               </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Hari</label>
                 <Select
-                  options={days.map((d, i) => ({ value: d, label: dayNames[i] }))}
+                  options={days.map((d, i) => ({ value: d as 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday', label: dayNames[i] }))}
                   value={{ value: formDay, label: dayNames[days.indexOf(formDay)] }}
                   onChange={(opt: any) => opt && setFormDay(opt.value)}
                   isSearchable={false}
@@ -548,6 +701,16 @@ const SchoolSchedules: React.FC = () => {
                   isSearchable={false}
                   placeholder="Pilih slot waktu..."
                   classNamePrefix="react-select"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Ruangan</label>
+                <input
+                  type="text"
+                  value={formRoom}
+                  onChange={e => setFormRoom(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="Contoh: A101"
                 />
               </div>
             </div>

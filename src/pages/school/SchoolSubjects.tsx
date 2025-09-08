@@ -5,27 +5,47 @@ import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Table from '../../components/ui/Table';
 import Modal from '../../components/ui/Modal';
+import { Subject } from '../../types';
 
-const initialSubjects = [
-  { id: '1', name: 'Matematika', code: 'MAT', major: 'IPA' },
-  { id: '2', name: 'Fisika', code: 'FIS', major: 'IPA' },
-  { id: '3', name: 'Ekonomi', code: 'EKO', major: 'IPS' },
-];
-
-const majorOptions = [
-  { value: 'IPA', label: 'IPA' },
-  { value: 'IPS', label: 'IPS' },
-  { value: 'Bahasa', label: 'Bahasa' },
+const initialSubjects: Subject[] = [
+  { 
+    id: '1', 
+    name: 'Matematika', 
+    code: 'MAT', 
+    description: 'Mata pelajaran matematika untuk semua jurusan',
+    credit_hours: 4,
+    is_active: true,
+    created_at: '2024-01-01T00:00:00Z'
+  },
+  { 
+    id: '2', 
+    name: 'Fisika', 
+    code: 'FIS', 
+    description: 'Mata pelajaran fisika untuk jurusan IPA',
+    credit_hours: 3,
+    is_active: true,
+    created_at: '2024-01-01T00:00:00Z'
+  },
+  { 
+    id: '3', 
+    name: 'Ekonomi', 
+    code: 'EKO', 
+    description: 'Mata pelajaran ekonomi untuk jurusan IPS',
+    credit_hours: 3,
+    is_active: true,
+    created_at: '2024-01-01T00:00:00Z'
+  },
 ];
 
 
 const SchoolSubjects: React.FC = () => {
   const [subjects, setSubjects] = useState(initialSubjects);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editSubject, setEditSubject] = useState<any | null>(null);
+  const [editSubject, setEditSubject] = useState<Subject | null>(null);
   const [formName, setFormName] = useState('');
   const [formCode, setFormCode] = useState('');
-  const [formMajor, setFormMajor] = useState('');
+  const [formDescription, setFormDescription] = useState('');
+  const [formCreditHours, setFormCreditHours] = useState(3);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
@@ -41,7 +61,7 @@ const SchoolSubjects: React.FC = () => {
   const filteredSubjects = subjects.filter(s =>
     s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     s.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.major.toLowerCase().includes(searchTerm.toLowerCase())
+    (s.description && s.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
   const totalPages = Math.ceil(filteredSubjects.length / itemsPerPage);
   const paginatedSubjects = filteredSubjects.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -50,45 +70,62 @@ const SchoolSubjects: React.FC = () => {
     setEditSubject(null);
     setFormName('');
     setFormCode('');
-    setFormMajor('');
+    setFormDescription('');
+    setFormCreditHours(3);
     setIsModalOpen(true);
   };
 
-  const openEditModal = (subject: any) => {
+  const openEditModal = (subject: Subject) => {
     setEditSubject(subject);
     setFormName(subject.name);
     setFormCode(subject.code);
-    setFormMajor(subject.major);
+    setFormDescription(subject.description || '');
+    setFormCreditHours(subject.credit_hours);
     setIsModalOpen(true);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (editSubject) {
-      setSubjects(subjects.map(s => s.id === editSubject.id ? { ...s, name: formName, code: formCode, major: formMajor } : s));
+      setSubjects(subjects.map(s => s.id === editSubject.id ? { 
+        ...s, 
+        name: formName, 
+        code: formCode, 
+        description: formDescription,
+        credit_hours: formCreditHours
+      } : s));
     } else {
       setSubjects([
         ...subjects,
-        { id: Date.now().toString(), name: formName, code: formCode, major: formMajor }
+        { 
+          id: Date.now().toString(), 
+          name: formName, 
+          code: formCode, 
+          description: formDescription,
+          credit_hours: formCreditHours,
+          is_active: true,
+          created_at: new Date().toISOString()
+        }
       ]);
     }
     setIsModalOpen(false);
   };
 
-  const handleDelete = (subject: any) => {
+  const handleDelete = (subject: Subject) => {
     if (window.confirm('Apakah Anda yakin ingin menghapus mata pelajaran ini?')) {
       setSubjects(subjects.filter(s => s.id !== subject.id));
     }
   };
 
   const columns = [
-    { key: 'name', header: 'Nama Mapel', render: (s: any) => s.name },
-    { key: 'code', header: 'Kode', render: (s: any) => s.code },
-    { key: 'major', header: 'Jurusan', render: (s: any) => s.major },
+    { key: 'name', header: 'Nama Mapel', render: (s: Subject) => s.name },
+    { key: 'code', header: 'Kode', render: (s: Subject) => s.code },
+    { key: 'description', header: 'Deskripsi', render: (s: Subject) => s.description || '-' },
+    { key: 'credit_hours', header: 'SKS', render: (s: Subject) => s.credit_hours },
     {
       key: 'actions',
       header: 'Aksi',
-      render: (subject: any) => (
+      render: (subject: Subject) => (
         <div className="flex gap-2 justify-end">
           <Button 
             variant="ghost" 
@@ -277,18 +314,27 @@ const SchoolSubjects: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Jurusan</label>
-                <select
-                  value={formMajor}
-                  onChange={e => setFormMajor(e.target.value)}
+                <label className="block text-sm font-medium text-gray-700 mb-1">Deskripsi</label>
+                <textarea
+                  value={formDescription}
+                  onChange={e => setFormDescription(e.target.value)}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
+                  placeholder="Deskripsi mata pelajaran (opsional)"
+                  rows={3}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">SKS (Satuan Kredit Semester)</label>
+                <input
+                  type="number"
+                  value={formCreditHours}
+                  onChange={e => setFormCreditHours(Number(e.target.value))}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
+                  placeholder="Contoh: 3"
+                  min="1"
+                  max="6"
                   required
-                >
-                  <option value="">Pilih Jurusan</option>
-                  {majorOptions.map(opt => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
+                />
               </div>
               <div className="flex gap-3 pt-2">
                 <Button 
@@ -302,7 +348,7 @@ const SchoolSubjects: React.FC = () => {
                 <Button 
                   type="submit"
                   className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={!formName.trim() || !formCode.trim() || !formMajor.trim()}
+                  disabled={!formName.trim() || !formCode.trim() || formCreditHours < 1}
                 >
                   {editSubject ? 'Simpan Perubahan' : 'Simpan'}
                 </Button>

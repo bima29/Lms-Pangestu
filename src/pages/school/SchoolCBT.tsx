@@ -6,11 +6,12 @@ import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
 import Table from '../../components/ui/Table';
 import Modal from '../../components/ui/Modal';
+import { CBTSession } from '../../types';
 
 const SchoolCBT: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editSession, setEditSession] = useState<any | null>(null);
-  const [viewSession, setViewSession] = useState<any | null>(null);
+  const [editSession, setEditSession] = useState<CBTSession | null>(null);
+  const [viewSession, setViewSession] = useState<CBTSession | null>(null);
   const [filterStatus, setFilterStatus] = useState('all');
   const [formTeacher, setFormTeacher] = useState<{ value: string; label: string } | null>(null);
   const [formClass, setFormClass] = useState<{ value: string; label: string } | null>(null);
@@ -33,61 +34,184 @@ const SchoolCBT: React.FC = () => {
     { value: 'XI IPA 2', label: 'XI IPA 2' },
   ];
 
-  const [cbtSessions, setCbtSessions] = useState([
+  const [cbtSessions, setCbtSessions] = useState<CBTSession[]>([
     {
       id: '1',
       title: 'Ujian Tengah Semester - Matematika',
-      teacher: 'Budi Santoso',
-      class: 'XII IPA 1',
-      duration: 90,
-      questions: 25,
-      status: 'active',
-      participants: 28,
-      totalStudents: 32,
-      startDate: '2025-01-15 08:00',
-      endDate: '2025-01-15 09:30'
+      description: 'Ujian tengah semester untuk mata pelajaran Matematika',
+      subject_id: 'subject-1',
+      class_id: 'class-1',
+      teacher_id: 'teacher-1',
+      start_time: '2025-01-15T08:00:00Z',
+      end_time: '2025-01-15T09:30:00Z',
+      duration_minutes: 90,
+      total_questions: 25,
+      passing_score: 70,
+      shuffle_questions: true,
+      show_results: true,
+      is_active: true,
+      created_at: '2025-01-10T00:00:00Z',
+      updated_at: '2025-01-10T00:00:00Z',
+      teacher: {
+        id: 'teacher-1',
+        employee_id: 'EMP001',
+        user_id: 'user-1',
+        specialization: 'Matematika',
+        hire_date: '2020-07-01',
+        salary: 5000000,
+        status: 'active',
+        created_at: '2020-07-01T00:00:00Z',
+        user: {
+          id: 'user-1',
+          name: 'Budi Santoso',
+          email: 'budi.santoso@school.id',
+          role: 'teacher',
+          is_active: true,
+          created_at: '2020-07-01T00:00:00Z',
+          updated_at: '2020-07-01T00:00:00Z'
+        }
+      },
+      class: {
+        id: 'class-1',
+        name: 'XII IPA 1',
+        grade_level: 12,
+        academic_year: '2024/2025',
+        max_students: 36,
+        is_active: true,
+        created_at: '2024-07-01T00:00:00Z'
+      },
+      subject: {
+        id: 'subject-1',
+        name: 'Matematika',
+        code: 'MAT',
+        credit_hours: 4,
+        is_active: true,
+        created_at: '2024-01-01T00:00:00Z'
+      }
     },
     {
       id: '2',
       title: 'Quiz Fisika - Gelombang',
-      teacher: 'Siti Rahayu',
-      class: 'XII IPA 2',
-      duration: 45,
-      questions: 15,
-      status: 'scheduled',
-      participants: 0,
-      totalStudents: 30,
-      startDate: '2025-01-16 10:00',
-      endDate: '2025-01-16 10:45'
+      description: 'Quiz harian untuk materi gelombang fisika',
+      subject_id: 'subject-2',
+      class_id: 'class-2',
+      teacher_id: 'teacher-2',
+      start_time: '2025-01-16T10:00:00Z',
+      end_time: '2025-01-16T10:45:00Z',
+      duration_minutes: 45,
+      total_questions: 15,
+      passing_score: 75,
+      shuffle_questions: true,
+      show_results: false,
+      is_active: true,
+      created_at: '2025-01-12T00:00:00Z',
+      updated_at: '2025-01-12T00:00:00Z',
+      teacher: {
+        id: 'teacher-2',
+        employee_id: 'EMP002',
+        user_id: 'user-2',
+        specialization: 'Fisika',
+        hire_date: '2019-08-01',
+        salary: 4800000,
+        status: 'active',
+        created_at: '2019-08-01T00:00:00Z',
+        user: {
+          id: 'user-2',
+          name: 'Siti Rahayu',
+          email: 'siti.rahayu@school.id',
+          role: 'teacher',
+          is_active: true,
+          created_at: '2019-08-01T00:00:00Z',
+          updated_at: '2019-08-01T00:00:00Z'
+        }
+      },
+      class: {
+        id: 'class-2',
+        name: 'XII IPA 2',
+        grade_level: 12,
+        academic_year: '2024/2025',
+        max_students: 36,
+        is_active: true,
+        created_at: '2024-07-01T00:00:00Z'
+      },
+      subject: {
+        id: 'subject-2',
+        name: 'Fisika',
+        code: 'FIS',
+        credit_hours: 3,
+        is_active: true,
+        created_at: '2024-01-01T00:00:00Z'
+      }
     },
     {
       id: '3',
       title: 'Evaluasi Kimia Organik',
-      teacher: 'Ahmad Wijaya',
-      class: 'XI IPA 1',
-      duration: 60,
-      questions: 20,
-      status: 'completed',
-      participants: 29,
-      totalStudents: 29,
-      startDate: '2025-01-10 13:00',
-      endDate: '2025-01-10 14:00'
+      description: 'Evaluasi pemahaman kimia organik',
+      subject_id: 'subject-3',
+      class_id: 'class-3',
+      teacher_id: 'teacher-3',
+      start_time: '2025-01-10T13:00:00Z',
+      end_time: '2025-01-10T14:00:00Z',
+      duration_minutes: 60,
+      total_questions: 20,
+      passing_score: 70,
+      shuffle_questions: false,
+      show_results: true,
+      is_active: false,
+      created_at: '2025-01-08T00:00:00Z',
+      updated_at: '2025-01-08T00:00:00Z',
+      teacher: {
+        id: 'teacher-3',
+        employee_id: 'EMP003',
+        user_id: 'user-3',
+        specialization: 'Kimia',
+        hire_date: '2021-01-15',
+        salary: 4900000,
+        status: 'active',
+        created_at: '2021-01-15T00:00:00Z',
+        user: {
+          id: 'user-3',
+          name: 'Ahmad Wijaya',
+          email: 'ahmad.wijaya@school.id',
+          role: 'teacher',
+          is_active: true,
+          created_at: '2021-01-15T00:00:00Z',
+          updated_at: '2021-01-15T00:00:00Z'
+        }
+      },
+      class: {
+        id: 'class-3',
+        name: 'XI IPA 1',
+        grade_level: 11,
+        academic_year: '2024/2025',
+        max_students: 36,
+        is_active: true,
+        created_at: '2024-07-01T00:00:00Z'
+      },
+      subject: {
+        id: 'subject-3',
+        name: 'Kimia',
+        code: 'KIM',
+        credit_hours: 3,
+        is_active: true,
+        created_at: '2024-01-01T00:00:00Z'
+      }
     }
   ]);
-  const [deleteSession, setDeleteSession] = useState<any | null>(null);
+  const [deleteSession, setDeleteSession] = useState<CBTSession | null>(null);
 
   const filteredSessions = filterStatus === 'all' 
     ? cbtSessions 
-    : cbtSessions.filter(session => session.status === filterStatus);
+    : cbtSessions.filter(session => session.is_active === (filterStatus === 'active'));
 
 
-  const openEditModal = (session: any) => {
+  const openEditModal = (session: CBTSession) => {
     setEditSession(session);
     setFormTitle(session.title);
-    setFormTeacher(teacherOptions.find(opt => opt.value === session.teacher) || null);
-    setFormClass(classOptions.find(opt => opt.value === session.class) || null);
-    setFormStartDate(session.startDate ? session.startDate.replace(' ', 'T') : '');
-    setFormDuration(session.duration ? String(session.duration) : '');
+    setFormTeacher(teacherOptions.find(opt => opt.value === session.teacher?.user?.name) || null);
+    setFormClass(classOptions.find(opt => opt.value === session.class?.name) || null);
+    setFormStartDate(session.start_time ? session.start_time.slice(0, 16) : '');
+    setFormDuration(session.duration_minutes ? String(session.duration_minutes) : '');
     setIsModalOpen(false);
   };
 
@@ -103,22 +227,32 @@ const SchoolCBT: React.FC = () => {
   const handleEditSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!editSession) return;
-    setCbtSessions((prev: any[]) => prev.map(s =>
+    setCbtSessions((prev: CBTSession[]) => prev.map(s =>
       s.id === editSession.id
         ? {
             ...s,
             title: formTitle,
-            teacher: formTeacher?.value || '',
-            class: formClass?.value || '',
-            startDate: formStartDate.replace('T', ' '),
-            duration: Number(formDuration)
+            teacher: s.teacher ? {
+              ...s.teacher,
+              user: s.teacher.user ? {
+                ...s.teacher.user,
+                name: formTeacher?.value || s.teacher.user.name
+              } : undefined
+            } : undefined,
+            class: s.class ? {
+              ...s.class,
+              name: formClass?.value || s.class.name
+            } : undefined,
+            start_time: formStartDate ? new Date(formStartDate).toISOString() : s.start_time,
+            duration_minutes: Number(formDuration) || s.duration_minutes,
+            updated_at: new Date().toISOString()
           }
         : s
     ));
     closeEditModal();
   };
 
-  const openViewModal = (session: any) => {
+  const openViewModal = (session: CBTSession) => {
     setViewSession(session);
   };
 
@@ -126,24 +260,24 @@ const SchoolCBT: React.FC = () => {
     setViewSession(null);
   };
 
-  const openDeleteModal = (session: any) => {
+  const openDeleteModal = (session: CBTSession) => {
     setDeleteSession(session);
   };
 
   const handleDeleteSession = () => {
     if (!deleteSession) return;
-    setCbtSessions((prev: any[]) => prev.filter(s => s.id !== deleteSession.id));
+    setCbtSessions((prev: CBTSession[]) => prev.filter(s => s.id !== deleteSession.id));
     setDeleteSession(null);
   };
 
   const columns = [
     { 
       key: 'title', 
-      header: 'Test Title',
+      header: 'CBT Session',
       render: (session: any) => (
         <div>
-          <p className="font-medium text-gray-900">{session.title}</p>
-          <p className="text-sm text-gray-500">{session.teacher} • {session.class}</p>
+          <p className="font-medium">{session.title}</p>
+          <p className="text-sm text-gray-500">{session.teacher?.user?.name || 'N/A'} • {session.class?.name || 'N/A'}</p>
         </div>
       )
     },
@@ -153,7 +287,7 @@ const SchoolCBT: React.FC = () => {
       render: (session: any) => (
         <div className="flex items-center gap-1">
           <Clock className="h-4 w-4 text-gray-400" />
-          <span>{session.duration} min</span>
+          <span>{session.duration_minutes} min</span>
         </div>
       )
     },
@@ -161,7 +295,7 @@ const SchoolCBT: React.FC = () => {
       key: 'questions', 
       header: 'Questions',
       render: (session: any) => (
-        <span>{session.questions}</span>
+        <span>{session.total_questions}</span>
       )
     },
     { 
@@ -170,31 +304,49 @@ const SchoolCBT: React.FC = () => {
       render: (session: any) => (
         <div className="flex items-center gap-1">
           <Users className="h-4 w-4 text-gray-400" />
-          <span>{session.participants}/{session.totalStudents}</span>
+          <span>{session.attempts?.length || 0}/{session.class?.max_students || 0}</span>
         </div>
       )
     },
     { 
       key: 'status', 
       header: 'Status',
-      render: (session: any) => (
-        <Badge 
-          variant={
-            session.status === 'active' ? 'success' : 
-            session.status === 'completed' ? 'secondary' : 'warning'
-          }
-        >
-          {session.status}
-        </Badge>
-      )
+      render: (session: any) => {
+        const now = new Date();
+        const startTime = new Date(session.start_time);
+        const endTime = new Date(session.end_time);
+        
+        let status = 'scheduled';
+        let variant: 'success' | 'secondary' | 'warning' | 'danger' = 'warning';
+        
+        if (!session.is_active) {
+          status = 'inactive';
+          variant = 'secondary';
+        } else if (now > endTime) {
+          status = 'completed';
+          variant = 'secondary';
+        } else if (now >= startTime && now <= endTime) {
+          status = 'ongoing';
+          variant = 'success';
+        } else if (now < startTime) {
+          status = 'scheduled';
+          variant = 'warning';
+        }
+        
+        return (
+          <Badge variant={variant}>
+            {status}
+          </Badge>
+        );
+      }
     },
     { 
-      key: 'startDate', 
+      key: 'start_time', 
       header: 'Schedule',
       render: (session: any) => (
         <div className="text-sm">
-          <p>{session.startDate.split(' ')[0]}</p>
-          <p className="text-gray-500">{session.startDate.split(' ')[1]}</p>
+          <p>{new Date(session.start_time).toLocaleDateString()}</p>
+          <p className="text-gray-500">{new Date(session.start_time).toLocaleTimeString()}</p>
         </div>
       )
     },
@@ -466,40 +618,39 @@ const SchoolCBT: React.FC = () => {
               <div>
                 <h2 className="text-xl font-bold text-primary-900 mb-1">{viewSession.title}</h2>
                 <div className="flex gap-2 text-sm text-gray-500">
-                  <span><span className="font-semibold">Teacher:</span> {viewSession.teacher}</span>
+                  <span><span className="font-semibold">Teacher:</span> {viewSession.teacher?.user?.name || 'N/A'}</span>
                   <span>•</span>
-                  <span><span className="font-semibold">Class:</span> {viewSession.class}</span>
+                  <span><span className="font-semibold">Class:</span> {viewSession.class?.name || 'N/A'}</span>
                 </div>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex items-center gap-2">
                 <Clock className="h-5 w-5 text-primary-500" />
-                <span><span className="font-semibold">Start:</span> {viewSession.startDate}</span>
+                <span><span className="font-semibold">Start:</span> {new Date(viewSession.start_time).toLocaleString()}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="h-5 w-5 text-primary-500" />
-                <span><span className="font-semibold">End:</span> {viewSession.endDate}</span>
+                <span><span className="font-semibold">End:</span> {new Date(viewSession.end_time).toLocaleString()}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="font-semibold">Duration:</span>
-                <span>{viewSession.duration} min</span>
+                <span>{viewSession.duration_minutes} min</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="font-semibold">Questions:</span>
-                <span>{viewSession.questions}</span>
+                <span>{viewSession.questions?.length || viewSession.total_questions}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Users className="h-5 w-5 text-accent-500" />
                 <span className="font-semibold">Participants:</span>
-                <span>{viewSession.participants}/{viewSession.totalStudents}</span>
+                <span>{viewSession.attempts?.length || 0}/{viewSession.class?.students?.length || 'N/A'}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="font-semibold">Status:</span>
-                <Badge variant={
-                  viewSession.status === 'active' ? 'success' : 
-                  viewSession.status === 'completed' ? 'secondary' : 'warning'
-                }>{viewSession.status}</Badge>
+                <Badge variant={viewSession.is_active ? 'success' : 'secondary'}>
+                  {viewSession.is_active ? 'Active' : 'Inactive'}
+                </Badge>
               </div>
             </div>
           </div>

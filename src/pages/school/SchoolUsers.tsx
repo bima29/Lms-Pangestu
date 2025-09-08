@@ -1,13 +1,47 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, UserCheck, UserX, Save, X, Filter, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Search, Filter, ChevronUp, ChevronDown, UserCheck, UserX, Save, X } from 'lucide-react';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
-import Table from '../../components/ui/Table';
 import Badge from '../../components/ui/Badge';
+import Table from '../../components/ui/Table';
 import Modal from '../../components/ui/Modal';
+import { User } from '../../types';
 import { usePagination } from '../../hooks/usePagination';
 import Pagination from '../../components/ui/Pagination';
 import Select from 'react-select';
+
+// Extended User interface for school users with nested relations
+interface SchoolUser extends User {
+  teacher?: {
+    id: string;
+    user_id: string;
+    employee_id?: string;
+    specialization?: string;
+    hire_date?: string;
+    salary?: number;
+    status: 'active' | 'inactive' | 'terminated';
+    created_at: string;
+  };
+  student?: {
+    id: string;
+    user_id: string;
+    student_id?: string;
+    class_id?: string;
+    parent_id?: string;
+    enrollment_date?: string;
+    graduation_date?: string;
+    status: 'active' | 'graduated' | 'dropped' | 'transferred';
+    created_at: string;
+  };
+  parent?: {
+    id: string;
+    user_id: string;
+    occupation?: string;
+    address?: string;
+    emergency_contact?: string;
+    created_at: string;
+  };
+}
 
 const SchoolUsers: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -15,27 +49,145 @@ const SchoolUsers: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedUser, setSelectedUser] = useState<SchoolUser | null>(null);
   const [itemsPerPage, setItemsPerPage] = useState(5);
   const [showFilters, setShowFilters] = useState(false);
 
   // Define schoolLevel here. You can set it to 'SD', 'SMP', 'SMA', or 'SMK' as needed.
   const schoolLevel = 'SMA';
 
-  const users = [
-    { id: '1', name: 'Budi Santoso', email: 'budi@school.com', role: 'teacher', class: 'XII IPA 1', status: 'active', avatar: 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=40&h=40&dpr=1' },
-    { id: '2', name: 'Siti Rahayu', email: 'siti@school.com', role: 'teacher', class: 'XI IPS 2', status: 'active', avatar: 'https://images.pexels.com/photos/1181686/pexels-photo-1181686.jpeg?auto=compress&cs=tinysrgb&w=40&h=40&dpr=1' },
-    { id: '3', name: 'Andi Pratama', email: 'andi@school.com', role: 'student', class: 'XII IPA 1', status: 'active', avatar: 'https://images.pexels.com/photos/1758144/pexels-photo-1758144.jpeg?auto=compress&cs=tinysrgb&w=40&h=40&dpr=1' },
-    { id: '4', name: 'Dewi Lestari', email: 'dewi@school.com', role: 'student', class: 'XI IPA 2', status: 'active', avatar: 'https://images.pexels.com/photos/1499327/pexels-photo-1499327.jpeg?auto=compress&cs=tinysrgb&w=40&h=40&dpr=1' },
-    { id: '5', name: 'Ahmad Wijaya', email: 'ahmad@school.com', role: 'parent', class: '-', status: 'active', avatar: 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=40&h=40&dpr=1' },
-    { id: '6', name: 'Maya Sari', email: 'maya@school.com', role: 'student', class: 'X IPA 1', status: 'inactive', avatar: 'https://images.pexels.com/photos/1758144/pexels-photo-1758144.jpeg?auto=compress&cs=tinysrgb&w=40&h=40&dpr=1' },
+  // Mock data matching database schema
+  const users: SchoolUser[] = [
+    { 
+      id: '1', 
+      email: 'budi@school.com', 
+      name: 'Budi Santoso', 
+      phone: '081234567892',
+      avatar_url: 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=40&h=40&dpr=1',
+      role: 'teacher', 
+      is_active: true,
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z',
+      teacher: {
+        id: 'tea-1',
+        user_id: '1',
+        employee_id: 'EMP001',
+        specialization: 'Matematika',
+        hire_date: '2020-07-01',
+        salary: 5000000,
+        status: 'active',
+        created_at: '2020-07-01T00:00:00Z'
+      }
+    },
+    { 
+      id: '2', 
+      email: 'siti@school.com', 
+      name: 'Siti Rahayu', 
+      phone: '081234567893',
+      avatar_url: 'https://images.pexels.com/photos/1181686/pexels-photo-1181686.jpeg?auto=compress&cs=tinysrgb&w=40&h=40&dpr=1',
+      role: 'teacher', 
+      is_active: true,
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z',
+      teacher: {
+        id: 'tea-2',
+        user_id: '2',
+        employee_id: 'EMP002',
+        specialization: 'Bahasa Indonesia',
+        hire_date: '2021-08-01',
+        salary: 4800000,
+        status: 'active',
+        created_at: '2021-08-01T00:00:00Z'
+      }
+    },
+    { 
+      id: '3', 
+      email: 'andi@school.com', 
+      name: 'Andi Pratama', 
+      phone: '081234567894',
+      avatar_url: 'https://images.pexels.com/photos/1758144/pexels-photo-1758144.jpeg?auto=compress&cs=tinysrgb&w=40&h=40&dpr=1',
+      role: 'student', 
+      is_active: true,
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z',
+      student: {
+        id: 'stu-1',
+        user_id: '3',
+        student_id: 'STU001',
+        class_id: 'cls-1',
+        parent_id: '5',
+        enrollment_date: '2022-07-01',
+        status: 'active',
+        created_at: '2022-07-01T00:00:00Z'
+      }
+    },
+    { 
+      id: '4', 
+      email: 'dewi@school.com', 
+      name: 'Dewi Lestari', 
+      phone: '081234567895',
+      avatar_url: 'https://images.pexels.com/photos/1499327/pexels-photo-1499327.jpeg?auto=compress&cs=tinysrgb&w=40&h=40&dpr=1',
+      role: 'student', 
+      is_active: true,
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z',
+      student: {
+        id: 'stu-2',
+        user_id: '4',
+        student_id: 'STU002',
+        class_id: 'cls-2',
+        parent_id: '6',
+        enrollment_date: '2022-07-01',
+        status: 'active',
+        created_at: '2022-07-01T00:00:00Z'
+      }
+    },
+    { 
+      id: '5', 
+      email: 'ahmad@school.com', 
+      name: 'Ahmad Wijaya', 
+      phone: '081234567896',
+      avatar_url: 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=40&h=40&dpr=1',
+      role: 'parent', 
+      is_active: true,
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z',
+      parent: {
+        id: 'par-1',
+        user_id: '5',
+        occupation: 'Wiraswasta',
+        address: 'Jl. Merdeka No. 123, Jakarta',
+        emergency_contact: '081234567897',
+        created_at: '2024-01-01T00:00:00Z'
+      }
+    },
+    { 
+      id: '6', 
+      email: 'maya@school.com', 
+      name: 'Maya Sari', 
+      phone: '081234567898',
+      avatar_url: 'https://images.pexels.com/photos/1758144/pexels-photo-1758144.jpeg?auto=compress&cs=tinysrgb&w=40&h=40&dpr=1',
+      role: 'student', 
+      is_active: false,
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z',
+      student: {
+        id: 'stu-3',
+        user_id: '6',
+        student_id: 'STU003',
+        class_id: 'cls-1',
+        enrollment_date: '2022-07-01',
+        status: 'transferred',
+        created_at: '2022-07-01T00:00:00Z'
+      }
+    },
   ];
 
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = roleFilter === 'all' || user.role === roleFilter;
-    const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
+    const matchesStatus = statusFilter === 'all' || (statusFilter === 'active' ? user.is_active : !user.is_active);
     return matchesSearch && matchesRole && matchesStatus;
   });
 
@@ -155,7 +307,7 @@ const SchoolUsers: React.FC = () => {
                   ...user,
                   user: (
                     <div className="flex items-center gap-3">
-                      <img src={user.avatar} alt={user.name} className="w-10 h-10 rounded-full object-cover shadow-sm border-2 border-primary-100" />
+                      <img src={user.avatar_url} alt={user.name} className="w-10 h-10 rounded-full object-cover shadow-sm border-2 border-primary-100" />
                       <div>
                         <p className="font-medium text-gray-900">{user.name}</p>
                         <p className="text-sm text-gray-500">{user.email}</p>
@@ -174,11 +326,13 @@ const SchoolUsers: React.FC = () => {
                     </Badge>
                   ),
                   class: (
-                    <span className="text-gray-700 font-medium text-xs md:text-sm px-2 py-1 rounded bg-gray-100">{user.class}</span>
+                    <span className="text-gray-700 font-medium text-xs md:text-sm px-2 py-1 rounded bg-gray-100">
+                      {user.student?.class_id || user.teacher?.specialization || 'N/A'}
+                    </span>
                   ),
                   status: (
-                    <Badge variant={user.status === 'active' ? 'success' : 'secondary'} className="px-3 py-1 rounded-full text-xs font-semibold">
-                      {user.status === 'active' ? 'Active' : 'Inactive'}
+                    <Badge variant={user.is_active ? 'success' : 'secondary'} className="px-3 py-1 rounded-full text-xs font-semibold">
+                      {user.is_active ? 'Active' : 'Inactive'}
                     </Badge>
                   ),
                   actions: (
