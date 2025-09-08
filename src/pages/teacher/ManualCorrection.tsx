@@ -4,30 +4,26 @@ import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
 
-// Dummy data for demonstration
-const dummyQuestions = [
-  {
-    id: 'q1',
-    content: 'Apa hasil dari 2 + 2?',
-    correctAnswer: '4',
-    studentAnswer: '4',
-    isCorrect: true,
-  },
-  {
-    id: 'q2',
-    content: 'Identifikasi gambar berikut',
-    correctAnswer: 'Gambar persegi',
-    studentAnswer: 'Gambar lingkaran',
-    isCorrect: false,
-  },
-  {
-    id: 'q3',
-    content: 'Manakah hasil dari 3 x 3?',
-    correctAnswer: '9',
-    studentAnswer: '9',
-    isCorrect: true,
-  },
-];
+import { mockCBTQuestions } from '../../data/mockData';
+
+// Dummy student answers for demonstration
+const dummyStudentAnswers: Record<string, number> = {
+  '1': 2, // Soal 1, jawaban index 2
+  '2': 0, // Soal 2, jawaban index 0
+  '3': 1, // Soal 3, jawaban index 1
+  '4': 0,
+  '5': 1,
+  '6': 1,
+  '7': 2,
+  '8': 0,
+  '9': 1,
+  '10': 1,
+  '11': 0,
+  '12': 0,
+  '13': 0,
+  '14': 1,
+  '15': 1
+};
 
 const dummyParticipant = {
   id: '1',
@@ -42,7 +38,21 @@ const dummyCBT = {
 
 const ManualCorrection: React.FC = () => {
   const navigate = useNavigate();
-  const [questions, setQuestions] = React.useState(dummyQuestions);
+  // Compose questions with student answer and isCorrect
+  const initialQuestions = mockCBTQuestions.map(q => {
+    const studentAnswerIdx = dummyStudentAnswers[q.id];
+    const studentAnswer = typeof studentAnswerIdx === 'number' ? q.options[studentAnswerIdx] : '-';
+    const correctAnswer = q.options[q.correctAnswer];
+    const isCorrect = studentAnswerIdx === q.correctAnswer;
+    return {
+      ...q,
+      content: q.question,
+      studentAnswer,
+      correctAnswer,
+      isCorrect
+    };
+  });
+  const [questions, setQuestions] = React.useState(initialQuestions);
 
   // Koreksi manual: toggle benar/salah
   const handleToggleCorrect = (idx: number) => {
@@ -84,22 +94,29 @@ const ManualCorrection: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
-              {questions.map((q, idx) => (
-                <tr key={q.id} className="hover:bg-primary-50 transition-all">
-                  <td className="px-2 sm:px-4 py-2 font-semibold">{idx + 1}</td>
-                  <td className="px-2 sm:px-4 py-2 max-w-xs truncate">{q.content}</td>
-                  <td className="px-2 sm:px-4 py-2">{q.studentAnswer}</td>
-                  <td className="px-2 sm:px-4 py-2">{q.correctAnswer}</td>
-                  <td className="px-2 sm:px-4 py-2">
-                    <Badge variant={q.isCorrect ? 'success' : 'error'}>{q.isCorrect ? 'Benar' : 'Salah'}</Badge>
-                  </td>
-                  <td className="px-2 sm:px-4 py-2">
-                    <Button variant="secondary" size="sm" onClick={() => handleToggleCorrect(idx)}>
-                      {q.isCorrect ? 'Tandai Salah' : 'Tandai Benar'}
-                    </Button>
-                  </td>
-                </tr>
-              ))}
+              {questions.map((q, idx) => {
+                const studentAnswerIdx = dummyStudentAnswers[q.id];
+                const correctAnswerIdx = typeof q.correctAnswer === 'number' ? q.correctAnswer : Number(q.correctAnswer);
+                const studentAnswer = typeof studentAnswerIdx === 'number' ? q.options[studentAnswerIdx] : '-';
+                const correctAnswer = typeof correctAnswerIdx === 'number' ? q.options[correctAnswerIdx] : '-';
+                const isCorrect = studentAnswerIdx === correctAnswerIdx;
+                return (
+                  <tr key={q.id} className="hover:bg-primary-50 transition-all">
+                    <td className="px-2 sm:px-4 py-2 font-semibold">{idx + 1}</td>
+                    <td className="px-2 sm:px-4 py-2 max-w-xs truncate">{q.question}</td>
+                    <td className="px-2 sm:px-4 py-2">{studentAnswer}</td>
+                    <td className="px-2 sm:px-4 py-2">{correctAnswer}</td>
+                    <td className="px-2 sm:px-4 py-2">
+                      <Badge variant={isCorrect ? 'success' : 'error'}>{isCorrect ? 'Benar' : 'Salah'}</Badge>
+                    </td>
+                    <td className="px-2 sm:px-4 py-2">
+                      <Button variant="secondary" size="sm" onClick={() => handleToggleCorrect(idx)}>
+                        {isCorrect ? 'Tandai Salah' : 'Tandai Benar'}
+                      </Button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

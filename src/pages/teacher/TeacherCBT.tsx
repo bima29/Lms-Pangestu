@@ -5,18 +5,22 @@ import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
 import Modal from '../../components/ui/Modal';
 import Table from '../../components/ui/Table';
+import { mockCBTQuestions } from '../../data/mockData';
 
 const TeacherCBT: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedClass, setSelectedClass] = useState('XII IPA 1');
+  const [editSession, setEditSession] = useState<any>(null);
 
+  // Example: get sessions from mockData (replace with real API/context if available)
   const cbtSessions = [
     {
       id: '1',
       title: 'Ujian Tengah Semester - Matematika',
       class: 'XII IPA 1',
       duration: 90,
-      questions: 25,
+      questions: mockCBTQuestions.length,
       status: 'active',
       participants: 28,
       totalStudents: 32,
@@ -122,7 +126,7 @@ const TeacherCBT: React.FC = () => {
           <Button variant="ghost" size="sm" onClick={() => window.location.href = `/teacher/CBTViewParticipants?id=${session.id}`}>
             <Eye className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="sm">
+          <Button variant="ghost" size="sm" onClick={() => { setEditSession(session); setIsEditModalOpen(true); }}>
             <Edit className="h-4 w-4" />
           </Button>
           <Button variant="ghost" size="sm">
@@ -298,6 +302,85 @@ const TeacherCBT: React.FC = () => {
             <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancel</Button>
           </div>
         </form>
+      </Modal>
+
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        title="Edit CBT"
+        size="lg"
+      >
+        {editSession && (
+          <form className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Test Title</label>
+                <input
+                  type="text"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  value={editSession.title}
+                  onChange={e => setEditSession({ ...editSession, title: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Class</label>
+                <select
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  value={editSession.class}
+                  onChange={e => setEditSession({ ...editSession, class: e.target.value })}
+                >
+                  {classes.map(cls => (
+                    <option key={cls} value={cls}>{cls}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Duration (minutes)</label>
+                <input
+                  type="number"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  value={editSession.duration}
+                  onChange={e => setEditSession({ ...editSession, duration: Number(e.target.value) })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Number of Questions</label>
+                <input
+                  type="number"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  value={editSession.questions}
+                  onChange={e => setEditSession({ ...editSession, questions: Number(e.target.value) })}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                <input
+                  type="date"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  value={editSession.startDate}
+                  onChange={e => setEditSession({ ...editSession, startDate: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                <input
+                  type="date"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  value={editSession.endDate}
+                  onChange={e => setEditSession({ ...editSession, endDate: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 pt-4">
+              <Button type="button" className="flex-1" onClick={() => setIsEditModalOpen(false)}>Save Changes</Button>
+              <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>Cancel</Button>
+            </div>
+          </form>
+        )}
       </Modal>
     </div>
   );

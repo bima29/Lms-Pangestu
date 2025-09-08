@@ -4,31 +4,26 @@ import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
 import { Download } from 'lucide-react';
+import { mockCBTQuestions } from '../../data/mockData';
 
-// Dummy data for demonstration
-const dummyQuestions = [
-  {
-    id: 'q1',
-    content: 'Apa hasil dari 2 + 2?',
-    correctAnswer: '4',
-    studentAnswer: '4',
-    isCorrect: true,
-  },
-  {
-    id: 'q2',
-    content: 'Identifikasi gambar berikut',
-    correctAnswer: 'Gambar persegi',
-    studentAnswer: 'Gambar lingkaran',
-    isCorrect: false,
-  },
-  {
-    id: 'q3',
-    content: 'Manakah hasil dari 3 x 3?',
-    correctAnswer: '9',
-    studentAnswer: '9',
-    isCorrect: true,
-  },
-];
+// Dummy student answers for demonstration
+const dummyStudentAnswers: Record<string, number> = {
+  '1': 2, // Soal 1, jawaban index 2
+  '2': 0, // Soal 2, jawaban index 0
+  '3': 1, // Soal 3, jawaban index 1
+  '4': 0,
+  '5': 1,
+  '6': 1,
+  '7': 2,
+  '8': 0,
+  '9': 1,
+  '10': 1,
+  '11': 0,
+  '12': 0,
+  '13': 0,
+  '14': 1,
+  '15': 1
+};
 
 const dummyParticipant = {
   id: '1',
@@ -44,7 +39,7 @@ const dummyCBT = {
 const ViewStudentAnswers: React.FC = () => {
   const navigate = useNavigate();
   // In real app, get params from router and fetch data
-  const [questions] = React.useState(dummyQuestions);
+  const [questions] = React.useState(mockCBTQuestions);
 
   // Dummy export logic
   const handleExportExcel = () => {
@@ -86,17 +81,24 @@ const ViewStudentAnswers: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
-              {questions.map((q, idx) => (
-                <tr key={q.id} className="hover:bg-primary-50 transition-all">
-                  <td className="px-2 sm:px-4 py-2 font-semibold">{idx + 1}</td>
-                  <td className="px-2 sm:px-4 py-2 max-w-xs truncate">{q.content}</td>
-                  <td className="px-2 sm:px-4 py-2">{q.studentAnswer}</td>
-                  <td className="px-2 sm:px-4 py-2">{q.correctAnswer}</td>
-                  <td className="px-2 sm:px-4 py-2">
-                    <Badge variant={q.isCorrect ? 'success' : 'error'}>{q.isCorrect ? 'Benar' : 'Salah'}</Badge>
-                  </td>
-                </tr>
-              ))}
+              {questions.map((q, idx) => {
+                const studentAnswerIdx = dummyStudentAnswers[q.id];
+                const correctAnswerIdx = typeof q.correctAnswer === 'number' ? q.correctAnswer : Number(q.correctAnswer);
+                const studentAnswer = typeof studentAnswerIdx === 'number' ? q.options[studentAnswerIdx] : '-';
+                const correctAnswer = typeof correctAnswerIdx === 'number' ? q.options[correctAnswerIdx] : '-';
+                const isCorrect = studentAnswerIdx === correctAnswerIdx;
+                return (
+                  <tr key={q.id} className="hover:bg-primary-50 transition-all">
+                    <td className="px-2 sm:px-4 py-2 font-semibold">{idx + 1}</td>
+                    <td className="px-2 sm:px-4 py-2 max-w-xs truncate">{q.question}</td>
+                    <td className="px-2 sm:px-4 py-2">{studentAnswer}</td>
+                    <td className="px-2 sm:px-4 py-2">{correctAnswer}</td>
+                    <td className="px-2 sm:px-4 py-2">
+                      <Badge variant={isCorrect ? 'success' : 'error'}>{isCorrect ? 'Benar' : 'Salah'}</Badge>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

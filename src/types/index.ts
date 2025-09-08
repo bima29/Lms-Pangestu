@@ -30,11 +30,15 @@ export interface Grade {
   date: string;
 }
 
+export type MediaType = 'text' | 'image' | 'audio' | 'video' | 'multiple_choice';
+
 export interface CBTQuestion {
   id: string;
   question: string;
   options: string[];
   correctAnswer: number;
+  type?: MediaType;
+  mediaUrl?: string;
 }
 
 export interface CBTSession {

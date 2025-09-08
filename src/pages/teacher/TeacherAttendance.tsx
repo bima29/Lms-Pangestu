@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Modal from '../../components/ui/Modal';
-import { Edit, Trash2, Eye } from 'lucide-react';
+import { Trash2, Eye } from 'lucide-react';
 import { UserCheck, Users, Calendar } from 'lucide-react';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
@@ -147,9 +147,6 @@ const TeacherAttendance: React.FC = () => {
     setShowModal(true);
   };
 
-  const handleEdit = (attendance: any) => {
-    alert('Edit absensi: ' + attendance.date + ' ' + attendance.class);
-  };
   const handleDelete = (attendance: any) => {
     alert('Delete absensi: ' + attendance.date + ' ' + attendance.class);
   };
@@ -545,15 +542,6 @@ const TeacherAttendance: React.FC = () => {
                         >
                           <Eye className="h-4 w-4 mr-1" />
                           Lihat
-                        </Button>
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => handleEdit(att)}
-                          className="min-w-[70px] px-3 py-2 rounded-lg"
-                        >
-                          <Edit className="h-4 w-4 mr-1" />
-                          Edit
                         </Button>
                         <Button
                           variant="danger"
