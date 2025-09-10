@@ -1,7 +1,7 @@
 import { 
   User, Student, Teacher, Parent, Major, Class, Subject, ClassSubject,
-  CBTQuestion, CBTQuestionOption, CBTSession, Grade, Assignment, 
-  LearningMaterial, Announcement, Notification 
+  CBTQuestion, CBTSession, CBTAttempt, CBTAnswer, 
+  AttendanceRecord, Grade, Assignment, LearningMaterial
 } from '../types';
 
 // ============================================
@@ -1087,5 +1087,254 @@ export const mockCBTQuestions: CBTQuestion[] = [
       }
     ]
   }
- 
+];
+
+// ============================================
+// CBT SESSIONS DATA
+// ============================================
+
+export const mockCBTSessions: CBTSession[] = [
+  {
+    id: 'cbt-1',
+    title: 'Ujian Tengah Semester - Matematika',
+    description: 'Ujian tengah semester untuk mata pelajaran Matematika',
+    subject_id: 'sub-1',
+    class_id: 'cls-1',
+    teacher_id: 'tea-1',
+    start_time: '2025-01-15T08:00:00Z',
+    end_time: '2025-01-15T10:00:00Z',
+    duration_minutes: 120,
+    total_questions: 25,
+    passing_score: 75,
+    shuffle_questions: true,
+    show_results: true,
+    is_active: true,
+    created_at: '2025-01-10T08:00:00Z',
+    updated_at: '2025-01-10T08:00:00Z'
+  },
+  {
+    id: 'cbt-2',
+    title: 'Quiz Integral',
+    description: 'Quiz singkat tentang integral',
+    subject_id: 'sub-1',
+    class_id: 'cls-1',
+    teacher_id: 'tea-1',
+    start_time: '2025-01-10T09:00:00Z',
+    end_time: '2025-01-10T09:30:00Z',
+    duration_minutes: 30,
+    total_questions: 10,
+    passing_score: 70,
+    shuffle_questions: false,
+    show_results: true,
+    is_active: false,
+    created_at: '2025-01-05T08:00:00Z',
+    updated_at: '2025-01-10T09:30:00Z'
+  }
+];
+
+// ============================================
+// CBT ATTEMPTS DATA
+// ============================================
+
+export const mockCBTAttempts: CBTAttempt[] = [
+  {
+    id: 'att-1',
+    session_id: 'cbt-1',
+    student_id: 'stu-1',
+    start_time: '2025-01-15T09:00:00Z',
+    end_time: '2025-01-15T10:30:00Z',
+    total_score: 85,
+    max_score: 100,
+    percentage: 85,
+    status: 'completed',
+    created_at: '2025-01-15T09:00:00Z'
+  },
+  {
+    id: 'att-2',
+    session_id: 'cbt-1',
+    student_id: 'stu-2',
+    start_time: '2025-01-15T09:00:00Z',
+    end_time: '2025-01-15T10:15:00Z',
+    total_score: 92,
+    max_score: 100,
+    percentage: 92,
+    status: 'completed',
+    created_at: '2025-01-15T09:00:00Z'
+  }
+];
+
+// ============================================
+// CBT ANSWERS DATA
+// ============================================
+
+export const mockCBTAnswers: CBTAnswer[] = [
+  {
+    id: 'ans-1',
+    attempt_id: 'att-1',
+    question_id: 'q1',
+    selected_option_id: 'opt-1-3',
+    is_correct: true,
+    points_earned: 10,
+    answered_at: '2025-01-15T09:15:00Z'
+  },
+  {
+    id: 'ans-2',
+    attempt_id: 'att-1',
+    question_id: 'q2',
+    selected_option_id: 'opt-2-1',
+    is_correct: false,
+    points_earned: 0,
+    answered_at: '2025-01-15T09:16:00Z'
+  }
+];
+
+// ============================================
+// ATTENDANCE RECORDS DATA
+// ============================================
+
+export const mockAttendanceRecords: AttendanceRecord[] = [
+  {
+    id: 'rec-1',
+    attendance_id: 'att-1',
+    student_id: 'stu-1',
+    status: 'present',
+    notes: '',
+    recorded_at: '2025-01-15T07:30:00Z',
+    recorded_by: 'tea-1',
+    student: {
+      id: 'stu-1',
+      user_id: '4',
+      student_id: 'STU001',
+      class_id: 'cls-1',
+      status: 'active',
+      created_at: '2025-01-15T08:00:00Z',
+      user: {
+        id: '4',
+        email: 'andi@school.com',
+        name: 'Andi Pratama',
+        role: 'student',
+        is_active: true,
+        created_at: '2025-01-15T08:00:00Z',
+        updated_at: '2025-01-15T08:00:00Z'
+      }
+    }
+  },
+  {
+    id: 'rec-2',
+    attendance_id: 'att-1',
+    student_id: 'stu-2',
+    status: 'late',
+    notes: 'Terlambat 15 menit',
+    recorded_at: '2025-01-15T07:45:00Z',
+    recorded_by: 'tea-1',
+    student: {
+      id: 'stu-2',
+      user_id: '7',
+      student_id: 'STU002',
+      class_id: 'cls-1',
+      status: 'active',
+      created_at: '2025-01-15T08:00:00Z',
+      user: {
+        id: '7',
+        email: 'sari@school.com',
+        name: 'Sari Wulandari',
+        role: 'student',
+        is_active: true,
+        created_at: '2025-01-15T08:00:00Z',
+        updated_at: '2025-01-15T08:00:00Z'
+      }
+    }
+  }
+];
+
+// ============================================
+// ASSIGNMENTS DATA
+// ============================================
+
+export const mockAssignments: Assignment[] = [
+  {
+    id: 'asg-1',
+    title: 'Tugas Matematika - Integral',
+    description: 'Kerjakan soal integral pada buku halaman 45-50',
+    subject_id: 'sub-1',
+    class_id: 'cls-1',
+    teacher_id: 'tea-1',
+    due_date: '2025-01-20T23:59:59Z',
+    assignment_type: 'homework',
+    submission_type: 'text',
+    max_score: 100,
+    is_published: true,
+    created_at: '2025-01-15T08:00:00Z',
+    updated_at: '2025-01-15T08:00:00Z'
+  },
+  {
+    id: 'asg-2',
+    title: 'Project Fisika - Gerak Parabola',
+    description: 'Buat laporan percobaan gerak parabola',
+    subject_id: 'sub-2',
+    class_id: 'cls-1',
+    teacher_id: 'tea-1',
+    due_date: '2025-01-25T23:59:59Z',
+    assignment_type: 'project',
+    submission_type: 'file',
+    max_score: 100,
+    is_published: true,
+    created_at: '2025-01-15T08:00:00Z',
+    updated_at: '2025-01-15T08:00:00Z'
+  }
+];
+
+// ============================================
+// LEARNING MATERIALS DATA
+// ============================================
+
+export const mockLearningMaterials: LearningMaterial[] = [
+  {
+    id: 'mat-1',
+    title: 'Integral Tak Tentu',
+    description: 'Materi pembelajaran tentang integral tak tentu',
+    subject_id: 'sub-1',
+    class_id: 'cls-1',
+    teacher_id: 'tea-1',
+    material_type: 'document',
+    file_url: '/materials/integral-tak-tentu.pdf',
+    file_type: 'application/pdf',
+    file_size: 2516582,
+    is_published: true,
+    published_at: '2025-01-08T08:00:00Z',
+    created_at: '2025-01-08T08:00:00Z',
+    updated_at: '2025-01-08T08:00:00Z'
+  },
+  {
+    id: 'mat-2',
+    title: 'Rumus Trigonometri',
+    description: 'Kumpulan rumus trigonometri lengkap',
+    subject_id: 'sub-1',
+    class_id: 'cls-1',
+    teacher_id: 'tea-1',
+    material_type: 'document',
+    file_url: '/materials/rumus-trigonometri.pdf',
+    file_type: 'application/pdf',
+    file_size: 1887437,
+    is_published: true,
+    published_at: '2025-01-05T08:00:00Z',
+    created_at: '2025-01-05T08:00:00Z',
+    updated_at: '2025-01-05T08:00:00Z'
+  },
+  {
+    id: 'mat-3',
+    title: 'Video Penjelasan Limit',
+    description: 'Video pembelajaran tentang konsep limit',
+    subject_id: 'sub-1',
+    class_id: 'cls-1',
+    teacher_id: 'tea-1',
+    material_type: 'video',
+    file_url: '/materials/video-limit.mp4',
+    file_type: 'video/mp4',
+    file_size: 47185920,
+    is_published: true,
+    published_at: '2025-01-03T08:00:00Z',
+    created_at: '2025-01-03T08:00:00Z',
+    updated_at: '2025-01-03T08:00:00Z'
+  }
 ];

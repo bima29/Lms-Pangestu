@@ -14,11 +14,11 @@ const LoginPage: React.FC = () => {
 
   if (user) {
     const redirectPaths: Record<string, string> = {
-      super_admin: "/admin/dashboard",
+      super_admin: "/super-admin/dashboard",
       school_admin: "/school/dashboard",
-      teacher: "/teacher/classes",
-      student: "/student/home",
-      parent: "/parent/children",
+      teacher: "/teacher/dashboard",
+      student: "/student/dashboard",
+      parent: "/parent/dashboard",
     };
     return <Navigate to={redirectPaths[user.role]} replace />;
   }
@@ -34,6 +34,7 @@ const LoginPage: React.FC = () => {
   };
 
   const demoAccounts = [
+    { role: "Super Admin", email: "super@lms.com" },
     { role: "Admin Sekolah", email: "admin@school.com" },
     { role: "Guru", email: "guru@school.com" },
     { role: "Siswa", email: "siswa@school.com" },

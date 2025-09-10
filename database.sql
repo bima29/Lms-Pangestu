@@ -73,6 +73,28 @@ CREATE TABLE parents (
 -- ============================================
 -- 2. ACADEMIC MANAGEMENT TABLES
 -- ============================================
+-- Schools table (macro LMS)
+CREATE TABLE schools (
+    id VARCHAR(36) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    address TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_school_name (name)
+);
+
+-- Attach schools to core entities (added via ALTER to keep backward compat)
+ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS school_id VARCHAR(36) NULL AFTER role,
+    ADD CONSTRAINT fk_users_school FOREIGN KEY (school_id) REFERENCES schools(id);
+
+ALTER TABLE classes
+    ADD COLUMN IF NOT EXISTS school_id VARCHAR(36) NULL AFTER id,
+    ADD CONSTRAINT fk_classes_school FOREIGN KEY (school_id) REFERENCES schools(id);
+
+ALTER TABLE subjects
+    ADD COLUMN IF NOT EXISTS school_id VARCHAR(36) NULL AFTER id,
+    ADD CONSTRAINT fk_subjects_school FOREIGN KEY (school_id) REFERENCES schools(id);
 
 -- Majors/Programs table
 CREATE TABLE majors (
@@ -130,6 +152,52 @@ CREATE TABLE class_subjects (
     INDEX idx_class_subject (class_id, subject_id),
     INDEX idx_teacher_subject (teacher_id, subject_id)
 );
+
+-- ============================================
+-- Bridging tables for macro LMS relationships
+-- ============================================
+
+-- Many-to-many student to classes (historic membership)
+CREATE TABLE IF NOT EXISTS student_classes (
+    id VARCHAR(36) PRIMARY KEY,
+    student_id VARCHAR(36) NOT NULL,
+    class_id VARCHAR(36) NOT NULL,
+    academic_year VARCHAR(9) NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+    FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_student_class_year (student_id, class_id, academic_year),
+    INDEX idx_class_active (class_id, is_active)
+);
+
+-- Many-to-many parents to students (allow multiple guardians)
+CREATE TABLE IF NOT EXISTS parents_students (
+    parent_user_id VARCHAR(36) NOT NULL,
+    student_id VARCHAR(36) NOT NULL,
+    relation VARCHAR(50) DEFAULT 'parent',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (parent_user_id, student_id),
+    FOREIGN KEY (parent_user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+);
+
+-- Seed bridging tables from existing one-to-many fields (if data exists)
+INSERT INTO student_classes (id, student_id, class_id, academic_year, is_active)
+SELECT CONCAT('sc-', s.id), s.id, s.class_id, COALESCE((SELECT setting_value FROM system_settings WHERE setting_key='academic_year' LIMIT 1), '2024/2025'), TRUE
+FROM students s
+WHERE s.class_id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM student_classes sc WHERE sc.student_id = s.id AND sc.class_id = s.class_id
+  );
+
+INSERT INTO parents_students (parent_user_id, student_id, relation)
+SELECT s.parent_id, s.id, 'parent'
+FROM students s
+WHERE s.parent_id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM parents_students ps WHERE ps.parent_user_id = s.parent_id AND ps.student_id = s.id
+  );
 
 -- ============================================
 -- 3. CBT (COMPUTER BASED TEST) TABLES
@@ -484,6 +552,11 @@ CREATE TABLE activity_logs (
 -- 9. INSERT SAMPLE DATA
 -- ============================================
 
+-- Insert sample school
+INSERT INTO schools (id, name, address) VALUES
+('sch-1', 'SMA Pangestu', 'Jl. Merdeka No. 123, Jakarta')
+ON DUPLICATE KEY UPDATE name=VALUES(name), address=VALUES(address);
+
 -- Insert sample users
 INSERT INTO users (id, email, password_hash, name, role, phone) VALUES
 ('1', 'super@lms.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Super Administrator', 'super_admin', '081234567890'),
@@ -536,6 +609,11 @@ INSERT INTO system_settings (id, setting_key, setting_value, setting_type, descr
 ('set-3', 'semester', '1', 'string', 'Semester aktif', TRUE),
 ('set-4', 'max_file_size', '10485760', 'number', 'Maksimal ukuran file upload (bytes)', FALSE);
 
+-- Attach inserted data to school
+UPDATE users SET school_id = 'sch-1' WHERE id IN ('2','3','4','5');
+UPDATE classes SET school_id = 'sch-1' WHERE id IN ('cls-1','cls-2');
+UPDATE subjects SET school_id = 'sch-1' WHERE id IN ('sub-1','sub-2','sub-3','sub-4','sub-5','sub-6');
+
 -- ============================================
 -- 10. CREATE INDEXES FOR PERFORMANCE
 -- ============================================
@@ -547,6 +625,113 @@ CREATE INDEX idx_grades_student_semester ON grades(student_id, semester, academi
 CREATE INDEX idx_cbt_attempts_student_session ON cbt_attempts(student_id, session_id, status);
 CREATE INDEX idx_assignments_class_due ON assignments(class_id, due_date, is_published);
 CREATE INDEX idx_attendances_date_class ON attendances(date, class_subject_id);
+
+-- ============================================
+-- 11. MACRO LMS COMPATIBILITY VIEWS
+-- Map existing CBT entities to generic Exams/Questions/Results
+-- ============================================
+
+-- Exams view (generic)
+DROP VIEW IF EXISTS exams;
+CREATE VIEW exams AS
+SELECT 
+  id,
+  title,
+  description,
+  subject_id,
+  class_id,
+  teacher_id,
+  start_time,
+  end_time,
+  duration_minutes AS duration,
+  total_questions,
+  passing_score,
+  is_active
+FROM cbt_sessions;
+
+-- Questions view (generic)
+DROP VIEW IF EXISTS questions;
+CREATE VIEW questions AS
+SELECT 
+  q.id,
+  q.question AS text,
+  q.question_type,
+  q.subject_id,
+  q.teacher_id,
+  q.difficulty_level,
+  q.points,
+  q.media_url,
+  q.media_type,
+  q.is_active
+FROM cbt_questions q;
+
+-- Exam Results view (generic)
+DROP VIEW IF EXISTS exam_results;
+CREATE VIEW exam_results AS
+SELECT 
+  a.id,
+  a.session_id AS exam_id,
+  a.student_id,
+  a.total_score,
+  a.max_score,
+  a.percentage,
+  a.status,
+  a.start_time,
+  a.end_time
+FROM cbt_attempts a;
+
+-- Materials view (generic)
+DROP VIEW IF EXISTS materials;
+CREATE VIEW materials AS
+SELECT 
+  id,
+  title,
+  description,
+  content,
+  subject_id,
+  teacher_id,
+  class_id,
+  file_url,
+  file_type,
+  material_type,
+  is_published,
+  published_at,
+  created_at
+FROM learning_materials;
+
+-- Submissions view (generic)
+DROP VIEW IF EXISTS submissions;
+CREATE VIEW submissions AS
+SELECT 
+  id,
+  assignment_id,
+  student_id,
+  submission_text,
+  file_url,
+  file_name,
+  file_size,
+  submitted_at,
+  score,
+  feedback,
+  graded_at,
+  graded_by,
+  status
+FROM assignment_submissions;
+
+-- Attendance view (flattened per student per date)
+DROP VIEW IF EXISTS attendance;
+CREATE VIEW attendance AS
+SELECT 
+  ar.id,
+  a.class_subject_id,
+  a.date,
+  a.teacher_id,
+  ar.student_id,
+  ar.status,
+  ar.notes,
+  ar.recorded_at
+FROM attendance_records ar
+JOIN attendances a ON a.id = ar.attendance_id;
 
 -- ============================================
 -- END OF DATABASE SCHEMA

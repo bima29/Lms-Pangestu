@@ -1,52 +1,63 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
-import ProtectedRoute from './components/ProtectedRoute';
+import ProtectedRoute from './components/ProtectedRoute.tsx';
 
 // Layouts
-import SchoolLayout from './layouts/SchoolLayout';
-import TeacherLayout from './layouts/TeacherLayout';
-import StudentLayout from './layouts/StudentLayout';
-import ParentLayout from './layouts/ParentLayout';
+import SuperAdminLayout from './layouts/SuperAdminLayout.tsx';
+import SchoolLayout from './layouts/SchoolLayout.tsx';
+import TeacherLayout from './layouts/TeacherLayout.tsx';
+import StudentLayout from './layouts/StudentLayout.tsx';
+import ParentLayout from './layouts/ParentLayout.tsx';
 
 // Pages
-import LandingPage from './pages/LandingPage';
-import LoginPage from './pages/LoginPage';
-import UnauthorizedPage from './pages/UnauthorizedPage';
-import ProfilePage from './pages/ProfilePage';
+import LandingPage from './pages/LandingPage.tsx';
+import LoginPage from './pages/LoginPage.tsx';
+import UnauthorizedPage from './pages/UnauthorizedPage.tsx';
+import ProfilePage from './pages/ProfilePage.tsx';
 
-// Admin Pages
+// Super Admin Pages
+import SuperAdminDashboard from './pages/super-admin/SuperAdminDashboard.tsx';
+import SchoolManagement from './pages/super-admin/SchoolManagement.tsx';
+import SystemSettings from './pages/super-admin/SystemSettings.tsx';
 
 // School Pages
-import SchoolDashboard from './pages/school/SchoolDashboard';
-import SchoolUsers from './pages/school/SchoolUsers';
-import SchoolClasses from './pages/school/SchoolClasses';
-import SchoolSchedules from './pages/school/SchoolSchedules';
-import SchoolCBT from './pages/school/SchoolCBT';
-import SchoolDocuments from './pages/school/SchoolDocuments';
-import SchoolReports from './pages/school/SchoolReports';
-import SchoolClassManagement from './pages/school/SchoolClassManagement';
-import SchoolMajorManagement from './pages/school/SchoolMajorManagement';
-import SchoolSubjects from './pages/school/SchoolSubjects';
+import SchoolDashboard from './pages/school/SchoolDashboard.tsx';
+import SchoolUsers from './pages/school/SchoolUsersPage.tsx';
+import SchoolClasses from './pages/school/SchoolClasses.tsx';
+import SchoolSchedules from './pages/school/SchoolSchedules.tsx';
+import SchoolCBT from './pages/school/SchoolCBT.tsx';
+import SchoolDocuments from './pages/school/SchoolDocuments.tsx';
+import SchoolReports from './pages/school/SchoolReports.tsx';
+import SchoolMajorManagement from './pages/school/SchoolMajorManagement.tsx';
+import SchoolSubjects from './pages/school/SubjectsPage.tsx';
+import ClassSubjectsPage from './pages/school/ClassSubjectsPage.tsx';
 
 // Teacher Pages
-import TeacherClasses from './pages/teacher/TeacherClasses';
-import TeacherMaterials from './pages/teacher/TeacherMaterials';
-import TeacherCBT from './pages/teacher/TeacherCBT';
-import CBTViewParticipants from './pages/teacher/CBTViewParticipants';
-import ViewStudentAnswers from './pages/teacher/ViewStudentAnswers';
-import ManualCorrection from './pages/teacher/ManualCorrection';
-import TeacherAttendance from './pages/teacher/TeacherAttendance';
-import ManageQuestions from './pages/teacher/ManageQuestions';
+import TeacherDashboard from './pages/teacher/TeacherDashboard.tsx';
+import TeacherClasses from './pages/teacher/TeacherClasses.tsx';
+import TeacherMaterials from './pages/teacher/TeacherMaterials.tsx';
+import TeacherCBT from './pages/teacher/TeacherCBT.tsx';
+import CBTViewParticipants from './pages/teacher/CBTViewParticipants.tsx';
+import ViewStudentAnswers from './pages/teacher/ViewStudentAnswers.tsx';
+import ManualCorrection from './pages/teacher/ManualCorrection.tsx';
+import TeacherAttendance from './pages/teacher/TeacherAttendance.tsx';
+import ManageQuestions from './pages/teacher/ManageQuestions.tsx';
+import TeacherGradebook from './pages/teacher/TeacherGradebook.tsx';
 
 // Student Pages
-import StudentHome from './pages/student/StudentHome';
-import StudentCBT from './pages/student/StudentCBT';
-import StudentGrades from './pages/student/StudentGrades';
+import StudentHome from './pages/student/StudentHome.tsx';
+import StudentCBT from './pages/student/StudentCBT.tsx';
+import StudentGrades from './pages/student/StudentGrades.tsx';
+import StudentClasses from './pages/student/StudentClasses.tsx';
+import StudentMaterials from './pages/student/StudentMaterials.tsx';
+import StudentSchedule from './pages/student/StudentSchedule.tsx';
+import StudentAssignments from './pages/student/StudentAssignments.tsx';
 
 // Parent Pages
-import ParentChildren from './pages/parent/ParentChildren';
-import ParentGrades from './pages/parent/ParentGrades';
-import ParentNotifications from './pages/parent/ParentNotifications';
+import ParentDashboard from './pages/parent/ParentDashboard.tsx';
+import ParentChildren from './pages/parent/ParentChildren.tsx';
+import ParentGrades from './pages/parent/ParentGrades.tsx';
+import ParentNotifications from './pages/parent/ParentNotifications.tsx';
 
 function App() {
   return (
@@ -59,6 +70,21 @@ function App() {
           <Route path="/profile" element={<ProfilePage />} />
           
        
+          {/* Super Admin Routes */}
+          <Route path="/super-admin" element={
+            <ProtectedRoute allowedRoles={['super_admin']}>
+              <SuperAdminLayout />
+            </ProtectedRoute>
+          }>
+            <Route path="dashboard" element={<SuperAdminDashboard />} />
+            <Route path="schools" element={<SchoolManagement />} />
+            <Route path="users" element={<SchoolUsers />} />
+            <Route path="system-settings" element={<SystemSettings />} />
+            <Route path="security" element={<SystemSettings />} />
+            <Route path="reports" element={<SchoolReports />} />
+            <Route index element={<Navigate to="dashboard" replace />} />
+          </Route>
+
           {/* School Admin Routes */}
           <Route path="/school" element={
             <ProtectedRoute allowedRoles={['school_admin']}>
@@ -68,13 +94,19 @@ function App() {
             <Route path="dashboard" element={<SchoolDashboard />} />
             <Route path="users" element={<SchoolUsers />} />
             <Route path="classes" element={<SchoolClasses />} />
+            <Route path="majors" element={<SchoolMajorManagement />} />
             <Route path="subjects" element={<SchoolSubjects />} />
-            <Route path="class-management" element={<SchoolClassManagement />} />
-            <Route path="major-management" element={<SchoolMajorManagement />} />
+            <Route path="class-subjects" element={<ClassSubjectsPage />} />
             <Route path="schedules" element={<SchoolSchedules />} />
             <Route path="cbt" element={<SchoolCBT />} />
-            <Route path="documents" element={<SchoolDocuments />} />
+            <Route path="assignments" element={<SchoolDocuments />} />
+            <Route path="materials" element={<SchoolDocuments />} />
+            <Route path="attendance" element={<SchoolSchedules />} />
+            <Route path="grades" element={<SchoolReports />} />
+            <Route path="announcements" element={<SchoolDocuments />} />
+            <Route path="notifications" element={<SchoolDocuments />} />
             <Route path="reports" element={<SchoolReports />} />
+            <Route path="settings" element={<SchoolDocuments />} />
             <Route index element={<Navigate to="dashboard" replace />} />
           </Route>
           
@@ -84,16 +116,19 @@ function App() {
               <TeacherLayout />
             </ProtectedRoute>
           }>
+            <Route path="dashboard" element={<TeacherDashboard />} />
             <Route path="classes" element={<TeacherClasses />} />
             <Route path="materials" element={<TeacherMaterials />} />
-            <Route path="materials/manage-questions" element={<ManageQuestions />} />
-            <Route path="manage-questions/:id" element={<ManageQuestions />} />
+            <Route path="assignments" element={<TeacherMaterials />} />
             <Route path="cbt" element={<TeacherCBT />} />
-            <Route path="CBTViewParticipants" element={<CBTViewParticipants />} />
+            <Route path="manage-questions" element={<ManageQuestions />} />
+            <Route path="manage-questions/:id" element={<ManageQuestions />} />
+            <Route path="cbt-participants" element={<CBTViewParticipants />} />
             <Route path="view-student-answers" element={<ViewStudentAnswers />} />
             <Route path="manual-correction" element={<ManualCorrection />} />
             <Route path="attendance" element={<TeacherAttendance />} />
-            <Route index element={<Navigate to="classes" replace />} />
+            <Route path="gradebook" element={<TeacherGradebook />} />
+            <Route index element={<Navigate to="dashboard" replace />} />
           </Route>
           
           {/* Student Routes */}
@@ -102,10 +137,14 @@ function App() {
               <StudentLayout />
             </ProtectedRoute>
           }>
-            <Route path="home" element={<StudentHome />} />
+            <Route path="dashboard" element={<StudentHome />} />
+            <Route path="classes" element={<StudentClasses />} />
+            <Route path="materials" element={<StudentMaterials />} />
+            <Route path="assignments" element={<StudentAssignments />} />
             <Route path="cbt" element={<StudentCBT />} />
+            <Route path="schedule" element={<StudentSchedule />} />
             <Route path="grades" element={<StudentGrades />} />
-            <Route index element={<Navigate to="home" replace />} />
+            <Route index element={<Navigate to="dashboard" replace />} />
           </Route>
           
           {/* Parent Routes */}
@@ -114,10 +153,11 @@ function App() {
               <ParentLayout />
             </ProtectedRoute>
           }>
+            <Route path="dashboard" element={<ParentDashboard />} />
             <Route path="children" element={<ParentChildren />} />
             <Route path="grades" element={<ParentGrades />} />
             <Route path="notifications" element={<ParentNotifications />} />
-            <Route index element={<Navigate to="children" replace />} />
+            <Route index element={<Navigate to="dashboard" replace />} />
           </Route>
         </Routes>
       </Router>

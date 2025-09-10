@@ -9,6 +9,7 @@ export interface User {
   phone?: string;
   avatar_url?: string;
   role: 'super_admin' | 'school_admin' | 'teacher' | 'student' | 'parent';
+  school_id?: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -40,6 +41,26 @@ export interface Student {
   class?: Class;
   parent?: User;
   grades?: Grade[];
+}
+
+export interface StudentClass {
+  id: string;
+  student_id: string;
+  class_id: string;
+  academic_year: string;
+  is_active: boolean;
+  joined_at: string;
+  student?: Student;
+  class?: Class;
+}
+
+export interface ParentStudent {
+  parent_user_id: string;
+  student_id: string;
+  relation?: string; // 'parent', 'guardian'
+  created_at: string;
+  parent?: User;
+  student?: Student;
 }
 
 export interface Parent {
@@ -76,6 +97,7 @@ export interface Major {
 
 export interface Class {
   id: string;
+  school_id?: string;
   name: string;
   major_id?: string;
   grade_level: number; // 10, 11, 12
@@ -92,12 +114,21 @@ export interface Class {
 
 export interface Subject {
   id: string;
+  school_id?: string;
   name: string;
   code: string;
   description?: string;
   credit_hours: number;
   is_active: boolean;
   created_at: string;
+}
+
+export interface School {
+  id: string;
+  name: string;
+  address?: string;
+  created_at: string;
+  updated_at?: string;
 }
 
 export interface ClassSubject {

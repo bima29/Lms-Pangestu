@@ -16,13 +16,13 @@ const Sidebar: React.FC<SidebarProps> = ({ items }) => {
   const location = useLocation();
 
   return (
-    <aside className="w-64 bg-primary-900 text-white min-h-screen">
-      <div className="p-6">
+    <aside className="w-64 bg-primary-900 text-white h-screen flex flex-col">
+      <div className="p-6 flex-shrink-0">
         <h2 className="text-xl font-bold text-accent-400">Pangestu LMS</h2>
         <p className="text-xs text-primary-300 mt-1">Learning Management System</p>
       </div>
       
-      <nav className="px-3">
+      <nav className="px-3 flex-1 overflow-y-auto sidebar-scroll">
         {items.map((item) => {
           const Icon = item.icon;
           const paths = Array.isArray(item.path) ? item.path : [item.path];

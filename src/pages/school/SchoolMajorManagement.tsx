@@ -1,474 +1,129 @@
-import { useState, useEffect } from 'react';
-import { Edit, Trash2, Plus, Search, BookOpen, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
-import Table from '../../components/ui/Table';
-import Modal from '../../components/ui/Modal';
-import { Major } from '../../types';
+import type { Major, PaginationParams, PaginationResult } from '../../types';
+import { schoolService } from '../../services/schoolService';
 
-// Mock data matching database schema
-const initialMajors: Major[] = [
-  { 
-    id: 'maj-1', 
-    name: 'Ilmu Pengetahuan Alam', 
-    code: 'IPA',
-    description: 'Program studi IPA untuk siswa yang tertarik dengan sains',
-    is_active: true,
-    created_at: '2024-01-01T00:00:00Z',
-    updated_at: '2024-01-01T00:00:00Z'
-  },
-  { 
-    id: 'maj-2', 
-    name: 'Ilmu Pengetahuan Sosial', 
-    code: 'IPS',
-    description: 'Program studi IPS untuk siswa yang tertarik dengan sosial',
-    is_active: true,
-    created_at: '2024-01-01T00:00:00Z',
-    updated_at: '2024-01-01T00:00:00Z'
-  },
-  { 
-    id: 'maj-3', 
-    name: 'Teknik Komputer dan Jaringan', 
-    code: 'TKJ',
-    description: 'Program studi TKJ untuk siswa yang tertarik dengan teknologi',
-    is_active: true,
-    created_at: '2024-01-01T00:00:00Z',
-    updated_at: '2024-01-01T00:00:00Z'
-  },
-  { 
-    id: 'maj-4', 
-    name: 'Rekayasa Perangkat Lunak', 
-    code: 'RPL',
-    description: 'Program studi RPL untuk siswa yang tertarik dengan programming',
-    is_active: false,
-    created_at: '2024-01-01T00:00:00Z',
-    updated_at: '2024-01-01T00:00:00Z'
-  }
-];
+const defaultPage: PaginationParams = { page: 1, limit: 10, search: '' };
 
+export default function SchoolMajorManagement() {
+  const [pagination, setPagination] = useState<PaginationParams>(defaultPage);
+  const [result, setResult] = useState<PaginationResult<Major>>({ data: [], total: 0, page: 1, limit: 10, total_pages: 0 });
+  const [editing, setEditing] = useState<Major | null>(null);
+  const [form, setForm] = useState<Partial<Major>>({ is_active: true });
 
-const SchoolMajorManagement = () => {
-  const [majors, setMajors] = useState<Major[]>(initialMajors);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editMajor, setEditMajor] = useState<Major | null>(null);
-  const [majorName, setMajorName] = useState('');
-  const [majorCode, setMajorCode] = useState('');
-  const [majorDescription, setMajorDescription] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(5);
-  const [isLoading, setIsLoading] = useState(false);
+  const load = () => {
+    const res = schoolService.listMajorsPaged(pagination);
+    setResult(res);
+  };
 
-  // Simulate loading state
-  useEffect(() => {
-    setIsLoading(true);
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 800);
-    return () => clearTimeout(timer);
-  }, []);
+  useEffect(() => { load(); }, [pagination.page, pagination.limit, pagination.search]);
 
-  // Search & Pagination
-  const filteredMajors = majors.filter(m => 
-    m.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    m.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (m.description && m.description.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-  const totalPages = Math.ceil(filteredMajors.length / itemsPerPage);
-  const paginatedMajors = filteredMajors.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const isValid = useMemo(() => !!form.name && !!form.code, [form]);
 
-  // Add Major
-  const handleAddMajor = () => {
-    if (majorName.trim() && majorCode.trim()) {
-      const newMajor: Major = {
+  const resetForm = () => { setEditing(null); setForm({ is_active: true }); };
+
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isValid) return;
+    if (editing) {
+      schoolService.updateMajor(editing.id, {
+        name: form.name!,
+        code: form.code!,
+        description: form.description,
+        is_active: form.is_active ?? true,
+      });
+    } else {
+      const now = new Date().toISOString();
+      const payload: Major = {
         id: `maj-${Date.now()}`,
-        name: majorName,
-        code: majorCode,
-        description: majorDescription || undefined,
-        is_active: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        name: form.name!,
+        code: form.code!,
+        description: form.description,
+        is_active: form.is_active ?? true,
+        created_at: now,
       };
-      setMajors([...majors, newMajor]);
-      setMajorName('');
-      setMajorCode('');
-      setMajorDescription('');
-      setIsAddModalOpen(false);
+      schoolService.createMajor(payload);
     }
+    resetForm();
+    load();
   };
 
-  // Edit Major
-  const openEditModal = (major: Major) => {
-    setEditMajor(major);
-    setMajorName(major.name);
-    setMajorCode(major.code);
-    setMajorDescription(major.description || '');
-    setIsEditModalOpen(true);
+  const onEdit = (m: Major) => {
+    setEditing(m);
+    setForm({ name: m.name, code: m.code, description: m.description, is_active: m.is_active });
   };
-  
-  const handleEditMajor = () => {
-    if (majorName.trim() && majorCode.trim() && editMajor) {
-      setMajors(majors.map(m => m.id === editMajor.id ? { 
-        ...m, 
-        name: majorName, 
-        code: majorCode,
-        description: majorDescription || undefined,
-        updated_at: new Date().toISOString()
-      } : m));
-      setEditMajor(null);
-      setMajorName('');
-      setMajorCode('');
-      setMajorDescription('');
-      setIsEditModalOpen(false);
-    }
-  };
-
-  // Delete Major
-  const handleDeleteMajor = (id: string) => {
-    if (window.confirm('Apakah Anda yakin ingin menghapus jurusan ini?')) {
-      setMajors(majors.filter(m => m.id !== id));
-    }
-  };
+  const onDelete = (id: string) => { if (!confirm('Hapus jurusan ini?')) return; schoolService.deleteMajor(id); load(); };
 
   return (
-    <div className="p-4 md:p-6 bg-gradient-to-br from-blue-50 to-indigo-50 min-h-screen">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="mb-6 text-center">
-          <div className="inline-flex items-center justify-center p-3 bg-white rounded-full shadow-md mb-4">
-            <BookOpen className="h-8 w-8 text-indigo-600" />
+    <div className="space-y-6">
+      <h1 className="text-2xl font-semibold">Manajemen Jurusan</h1>
+
+      <Card>
+        <form onSubmit={onSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Nama</label>
+            <input className="w-full px-3 py-2 border rounded-lg" value={form.name ?? ''} onChange={(e)=>setForm(f=>({...f,name:e.target.value}))} required />
           </div>
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Manajemen Jurusan</h1>
-          <p className="text-gray-600">Kelola data jurusan sekolah dengan mudah</p>
+          <div>
+            <label className="block text-sm font-medium mb-1">Kode</label>
+            <input className="w-full px-3 py-2 border rounded-lg" value={form.code ?? ''} onChange={(e)=>setForm(f=>({...f,code:e.target.value.toUpperCase()}))} required />
+          </div>
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium mb-1">Deskripsi</label>
+            <input className="w-full px-3 py-2 border rounded-lg" value={form.description ?? ''} onChange={(e)=>setForm(f=>({...f,description:e.target.value}))} />
+          </div>
+          <div className="flex items-center gap-2">
+            <input id="m_active" type="checkbox" checked={form.is_active ?? true} onChange={(e)=>setForm(f=>({...f,is_active:e.target.checked}))} />
+            <label htmlFor="m_active">Aktif</label>
+          </div>
+          <div className="flex items-end gap-2">
+            <Button type="submit" disabled={!isValid}>{editing?'Update':'Tambah'}</Button>
+            {editing && <Button type="button" variant="secondary" onClick={resetForm}>Batal</Button>}
+          </div>
+        </form>
+      </Card>
+
+      <Card>
+        <div className="flex justify-between items-center mb-4">
+          <input className="w-full max-w-xs px-3 py-2 border rounded-lg" placeholder="Cari jurusan..." value={pagination.search ?? ''} onChange={(e)=>setPagination(p=>({...p,search:e.target.value,page:1}))} />
+          <span className="text-sm text-gray-500">Total: {result.total}</span>
         </div>
-
-        <Card className="shadow-xl rounded-2xl border-0 overflow-hidden bg-white">
-          <div className="p-6 border-b border-gray-100">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-              <div>
-                <h2 className="text-xl font-bold text-gray-800">Daftar Jurusan</h2>
-                <p className="text-sm text-gray-500 mt-1">
-                  {filteredMajors.length} jurusan ditemukan
-                </p>
-              </div>
-              <Button 
-                onClick={() => setIsAddModalOpen(true)} 
-                className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl flex items-center gap-2 shadow-md hover:shadow-lg transition-all duration-200"
-              >
-                <Plus className="h-4 w-4" /> Tambah Jurusan
-              </Button>
-            </div>
-            
-            {/* Search and Filter */}
-            <div className="mt-6 flex flex-col md:flex-row gap-3 items-start md:items-center">
-              <div className="relative w-full md:w-auto flex-grow">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                  className="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
-                  placeholder="Cari jurusan atau tipe..."
-                />
-              </div>
-              <select
-                value={itemsPerPage}
-                onChange={e => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
-                className="px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
-                style={{ minWidth: '120px' }}
-              >
-                {[5, 10, 20, 50, 100].map(n => (
-                  <option key={n} value={n}>{n} / halaman</option>
-                ))}
-              </select>
-            </div>
-          </div>
-          
-          {/* Table */}
-          <div className="overflow-x-auto rounded-lg">
-            {isLoading ? (
-              <div className="p-12 text-center">
-                <div className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-indigo-100 animate-pulse">
-                  <BookOpen className="h-5 w-5 text-indigo-600" />
-                </div>
-                <p className="mt-3 text-gray-500">Memuat data jurusan...</p>
-              </div>
-            ) : filteredMajors.length === 0 ? (
-              <div className="p-12 text-center">
-                <div className="inline-flex items-center justify-center h-12 w-12 rounded-full bg-gray-100">
-                  <Search className="h-6 w-6 text-gray-400" />
-                </div>
-                <h3 className="mt-4 text-sm font-medium text-gray-900">Tidak ada jurusan</h3>
-                <p className="mt-1 text-sm text-gray-500">
-                  {searchTerm ? 'Coba ubah kata kunci pencarian' : 'Mulai dengan menambahkan jurusan pertama'}
-                </p>
-                <div className="mt-6">
-                  <Button
-                    onClick={() => setIsAddModalOpen(true)}
-                    className="bg-indigo-600 hover:bg-indigo-700"
-                  >
-                    <Plus className="h-4 w-4 mr-2" /> Tambah Jurusan
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <Table
-                columns={[
-                  { key: 'name', header: 'Nama Jurusan', render: (m) => m.name },
-                  { key: 'code', header: 'Kode', render: (m) => m.code },
-                  { key: 'description', header: 'Deskripsi', render: (m) => m.description || '-' },
-                  { 
-                    key: 'status', 
-                    header: 'Status',
-                    render: (m) => (
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        m.is_active 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {m.is_active ? 'Aktif' : 'Tidak Aktif'}
-                      </span>
-                    )
-                  },
-                  { key: 'actions', header: 'Aksi', render: (m) => (
-                    <div className="flex gap-2 justify-end">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => openEditModal(m)} 
-                        className="text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors duration-200"
-                        title="Edit jurusan"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => handleDeleteMajor(m.id)} 
-                        className="text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
-                        title="Hapus jurusan"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+        <div className="overflow-auto">
+          <table className="min-w-full text-sm">
+            <thead>
+              <tr className="bg-gray-100 text-left">
+                <th className="px-3 py-2">Nama</th>
+                <th className="px-3 py-2">Kode</th>
+                <th className="px-3 py-2">Status</th>
+                <th className="px-3 py-2">Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {result.data.map(m => (
+                <tr key={m.id} className="border-t">
+                  <td className="px-3 py-2">{m.name}</td>
+                  <td className="px-3 py-2">{m.code}</td>
+                  <td className="px-3 py-2"><span className={`px-2 py-1 rounded text-xs ${m.is_active?'bg-green-100 text-green-700':'bg-gray-100 text-gray-600'}`}>{m.is_active?'Aktif':'Nonaktif'}</span></td>
+                  <td className="px-3 py-2">
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="secondary" onClick={()=>onEdit(m)}>Edit</Button>
+                      <Button size="sm" variant="danger" onClick={()=>onDelete(m.id)}>Hapus</Button>
                     </div>
-                  ) }
-                ]}
-                data={paginatedMajors}
-              />
-            )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="flex items-center justify-between mt-4">
+          <div className="text-sm text-gray-600">Halaman {result.page} dari {Math.max(1,result.total_pages)}</div>
+          <div className="flex gap-2">
+            <Button variant="secondary" disabled={result.page<=1} onClick={()=>setPagination(p=>({...p,page:Math.max(1,(p.page??1)-1)}))}>Prev</Button>
+            <Button variant="secondary" disabled={result.page>=result.total_pages} onClick={()=>setPagination(p=>({...p,page:Math.min(result.total_pages,(p.page??1)+1)}))}>Next</Button>
           </div>
-          
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="px-6 py-4 border-t border-gray-100 bg-gray-50">
-              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                <p className="text-sm text-gray-700">
-                  Menampilkan <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> -{' '}
-                  <span className="font-medium">
-                    {Math.min(currentPage * itemsPerPage, filteredMajors.length)}
-                  </span>{' '}
-                  dari <span className="font-medium">{filteredMajors.length}</span> jurusan
-                </p>
-                
-                <div className="flex items-center gap-2">
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))} 
-                    disabled={currentPage === 1}
-                    className="rounded-lg"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                      <button
-                        key={page}
-                        onClick={() => setCurrentPage(page)}
-                        className={`h-9 w-9 rounded-lg text-sm font-medium transition-colors duration-150 ${
-                          currentPage === page
-                            ? 'bg-indigo-600 text-white'
-                            : 'text-gray-700 hover:bg-gray-100'
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    ))}
-                  </div>
-                  
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} 
-                    disabled={currentPage === totalPages}
-                    className="rounded-lg"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-        </Card>
-
-        {/* Modal Add Major */}
-        <Modal 
-          isOpen={isAddModalOpen} 
-          onClose={() => setIsAddModalOpen(false)} 
-          title="Tambah Jurusan Baru" 
-          size="md"
-        >
-          <div className="space-y-4 py-2">
-            <div>
-              <label htmlFor="majorName" className="block text-sm font-medium text-gray-700 mb-1">
-                Nama Jurusan
-              </label>
-              <input
-                type="text"
-                id="majorName"
-                value={majorName}
-                onChange={e => setMajorName(e.target.value)}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
-                placeholder="Contoh: Ilmu Pengetahuan Alam"
-                onKeyPress={e => e.key === 'Enter' && handleAddMajor()}
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="majorCode" className="block text-sm font-medium text-gray-700 mb-1">
-                Kode Jurusan
-              </label>
-              <input
-                type="text"
-                id="majorCode"
-                value={majorCode}
-                onChange={e => setMajorCode(e.target.value)}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
-                placeholder="Contoh: IPA"
-                onKeyPress={e => e.key === 'Enter' && handleAddMajor()}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="majorDescription" className="block text-sm font-medium text-gray-700 mb-1">
-                Deskripsi (Opsional)
-              </label>
-              <textarea
-                id="majorDescription"
-                value={majorDescription}
-                onChange={e => setMajorDescription(e.target.value)}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
-                placeholder="Deskripsi jurusan..."
-                rows={3}
-              />
-            </div>
-            
-            <div className="flex gap-3 pt-2">
-              <Button 
-                variant="outline" 
-                onClick={() => setIsAddModalOpen(false)} 
-                className="flex-1 rounded-xl"
-              >
-                Batal
-              </Button>
-              <Button 
-                onClick={handleAddMajor} 
-                disabled={!majorName.trim() || !majorCode.trim()}
-                className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Simpan
-              </Button>
-            </div>
-          </div>
-        </Modal>
-
-        {/* Modal Edit Major */}
-        <Modal 
-          isOpen={isEditModalOpen} 
-          onClose={() => {
-            setIsEditModalOpen(false);
-            setEditMajor(null);
-            setMajorName('');
-            setMajorCode('');
-            setMajorDescription('');
-          }} 
-          title="Edit Jurusan" 
-          size="md"
-        >
-          <div className="space-y-4 py-2">
-            <div>
-              <label htmlFor="editMajorName" className="block text-sm font-medium text-gray-700 mb-1">
-                Nama Jurusan
-              </label>
-              <input
-                type="text"
-                id="editMajorName"
-                value={majorName}
-                onChange={e => setMajorName(e.target.value)}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
-                placeholder="Contoh: Ilmu Pengetahuan Alam"
-                onKeyPress={e => e.key === 'Enter' && handleEditMajor()}
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="editMajorCode" className="block text-sm font-medium text-gray-700 mb-1">
-                Kode Jurusan
-              </label>
-              <input
-                type="text"
-                id="editMajorCode"
-                value={majorCode}
-                onChange={e => setMajorCode(e.target.value)}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
-                placeholder="Contoh: IPA"
-                onKeyPress={e => e.key === 'Enter' && handleEditMajor()}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="editMajorDescription" className="block text-sm font-medium text-gray-700 mb-1">
-                Deskripsi (Opsional)
-              </label>
-              <textarea
-                id="editMajorDescription"
-                value={majorDescription}
-                onChange={e => setMajorDescription(e.target.value)}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
-                placeholder="Deskripsi jurusan..."
-                rows={3}
-              />
-            </div>
-            
-            <div className="flex gap-3 pt-2">
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  setIsEditModalOpen(false);
-                  setEditMajor(null);
-                  setMajorName('');
-                  setMajorCode('');
-                  setMajorDescription('');
-                }} 
-                className="flex-1 rounded-xl"
-              >
-                Batal
-              </Button>
-              <Button 
-                onClick={handleEditMajor} 
-                disabled={!majorName.trim() || !majorCode.trim()}
-                className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Simpan Perubahan
-              </Button>
-            </div>
-          </div>
-        </Modal>
-      </div>
+        </div>
+      </Card>
     </div>
   );
-};
-
-export default SchoolMajorManagement;
+}

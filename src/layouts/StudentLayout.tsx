@@ -1,26 +1,36 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import { 
-  Home, 
+  LayoutDashboard,
+  GraduationCap,
   FileText, 
-  Trophy 
+  Trophy,
+  BookOpen,
+  Calendar,
+  ClipboardList
 } from 'lucide-react';
 import Header from '../components/ui/Header';
 import Sidebar from '../components/ui/Sidebar';
 
 const StudentLayout: React.FC = () => {
   const sidebarItems = [
-    { name: 'Home', path: '/student/home', icon: Home },
-    { name: 'CBT', path: '/student/cbt', icon: FileText },
-    { name: 'Grades', path: '/student/grades', icon: Trophy },
+    { name: 'Dashboard', path: '/student/dashboard', icon: LayoutDashboard },
+    { name: 'Kelas Saya', path: '/student/classes', icon: GraduationCap },
+    { name: 'Materi Pelajaran', path: '/student/materials', icon: BookOpen },
+    { name: 'Tugas & PR', path: '/student/assignments', icon: ClipboardList },
+    { name: 'CBT/Ujian', path: '/student/cbt', icon: FileText },
+    { name: 'Jadwal Pelajaran', path: '/student/schedule', icon: Calendar },
+    { name: 'Laporan Nilai', path: '/student/grades', icon: Trophy },
   ];
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar items={sidebarItems} />
-      <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="flex h-screen bg-gray-50 overflow-hidden">
+      <div className="flex-shrink-0">
+        <Sidebar items={sidebarItems} />
+      </div>
+      <div className="flex-1 flex flex-col min-w-0">
         <Header />
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-6 custom-scroll">
           <Outlet />
         </main>
       </div>
