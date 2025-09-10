@@ -18,6 +18,7 @@ import ProfilePage from './pages/ProfilePage.tsx';
 // Super Admin Pages
 import SuperAdminDashboard from './pages/super-admin/SuperAdminDashboard.tsx';
 import SchoolManagement from './pages/super-admin/SchoolManagement.tsx';
+import SuperAdminUsers from './pages/super-admin/SuperAdminUsers.tsx';
 import SystemSettings from './pages/super-admin/SystemSettings.tsx';
 
 // School Pages
@@ -27,7 +28,7 @@ import SchoolClasses from './pages/school/SchoolClasses.tsx';
 import SchoolSchedules from './pages/school/SchoolSchedules.tsx';
 import SchoolCBT from './pages/school/SchoolCBT.tsx';
 import SchoolDocuments from './pages/school/SchoolDocuments.tsx';
-import SchoolReports from './pages/school/SchoolReports.tsx';
+import SuperAdminReports from './pages/super-admin/SuperAdminReports.tsx';
 import SchoolMajorManagement from './pages/school/SchoolMajorManagement.tsx';
 import SchoolSubjects from './pages/school/SubjectsPage.tsx';
 import ClassSubjectsPage from './pages/school/ClassSubjectsPage.tsx';
@@ -78,10 +79,9 @@ function App() {
           }>
             <Route path="dashboard" element={<SuperAdminDashboard />} />
             <Route path="schools" element={<SchoolManagement />} />
-            <Route path="users" element={<SchoolUsers />} />
+            <Route path="users" element={<SuperAdminUsers />} />
             <Route path="system-settings" element={<SystemSettings />} />
-            <Route path="security" element={<SystemSettings />} />
-            <Route path="reports" element={<SchoolReports />} />
+            <Route path="reports" element={<SuperAdminReports />} />
             <Route index element={<Navigate to="dashboard" replace />} />
           </Route>
 
@@ -102,10 +102,10 @@ function App() {
             <Route path="assignments" element={<SchoolDocuments />} />
             <Route path="materials" element={<SchoolDocuments />} />
             <Route path="attendance" element={<SchoolSchedules />} />
-            <Route path="grades" element={<SchoolReports />} />
+            <Route path="grades" element={<SchoolDocuments />} />
             <Route path="announcements" element={<SchoolDocuments />} />
             <Route path="notifications" element={<SchoolDocuments />} />
-            <Route path="reports" element={<SchoolReports />} />
+            <Route path="reports" element={<SchoolDocuments />} />
             <Route path="settings" element={<SchoolDocuments />} />
             <Route index element={<Navigate to="dashboard" replace />} />
           </Route>

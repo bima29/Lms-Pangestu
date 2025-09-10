@@ -5,9 +5,7 @@ import {
   Building2, 
   Users, 
   Settings,
-  BarChart3,
-  Shield
-} from 'lucide-react';
+  BarChart3} from 'lucide-react';
 import Header from '../components/ui/Header';
 import Sidebar from '../components/ui/Sidebar';
 
@@ -23,8 +21,6 @@ const SuperAdminLayout: React.FC = () => {
     { name: 'Pengaturan Sistem', path: '/super-admin/system-settings', icon: Settings },
     // Reports
     { name: 'Laporan Sistem', path: '/super-admin/reports', icon: BarChart3 },
-    // Security
-    { name: 'Keamanan', path: '/super-admin/security', icon: Shield },
   ];
 
   return (
