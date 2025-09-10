@@ -27,11 +27,18 @@ import SchoolUsers from './pages/school/SchoolUsersPage.tsx';
 import SchoolClasses from './pages/school/SchoolClasses.tsx';
 import SchoolSchedules from './pages/school/SchoolSchedules.tsx';
 import SchoolCBT from './pages/school/SchoolCBT.tsx';
-import SchoolDocuments from './pages/school/SchoolDocuments.tsx';
 import SuperAdminReports from './pages/super-admin/SuperAdminReports.tsx';
 import SchoolMajorManagement from './pages/school/SchoolMajorManagement.tsx';
 import SchoolSubjects from './pages/school/SubjectsPage.tsx';
 import ClassSubjectsPage from './pages/school/ClassSubjectsPage.tsx';
+import SchoolReports from './pages/school/SchoolReports.tsx';
+import SchoolAssignments from './pages/school/SchoolAssignments.tsx';
+import SchoolMaterials from './pages/school/SchoolMaterials.tsx';
+import SchoolAttendance from './pages/school/SchoolAttendance.tsx';
+import SchoolGrades from './pages/school/SchoolGrades.tsx';
+import SchoolAnnouncements from './pages/school/SchoolAnnouncements.tsx';
+import SchoolNotifications from './pages/school/SchoolNotifications.tsx';
+import SchoolSettings from './pages/school/SchoolSettings.tsx';
 
 // Teacher Pages
 import TeacherDashboard from './pages/teacher/TeacherDashboard.tsx';
@@ -99,14 +106,14 @@ function App() {
             <Route path="class-subjects" element={<ClassSubjectsPage />} />
             <Route path="schedules" element={<SchoolSchedules />} />
             <Route path="cbt" element={<SchoolCBT />} />
-            <Route path="assignments" element={<SchoolDocuments />} />
-            <Route path="materials" element={<SchoolDocuments />} />
-            <Route path="attendance" element={<SchoolSchedules />} />
-            <Route path="grades" element={<SchoolDocuments />} />
-            <Route path="announcements" element={<SchoolDocuments />} />
-            <Route path="notifications" element={<SchoolDocuments />} />
-            <Route path="reports" element={<SchoolDocuments />} />
-            <Route path="settings" element={<SchoolDocuments />} />
+            <Route path="assignments" element={<SchoolAssignments />} />
+            <Route path="materials" element={<SchoolMaterials />} />
+            <Route path="attendance" element={<SchoolAttendance />} />
+            <Route path="grades" element={<SchoolGrades />} />
+            <Route path="announcements" element={<SchoolAnnouncements />} />
+            <Route path="notifications" element={<SchoolNotifications />} />
+            <Route path="reports" element={<SchoolReports />} />
+            <Route path="settings" element={<SchoolSettings />} />
             <Route index element={<Navigate to="dashboard" replace />} />
           </Route>
           

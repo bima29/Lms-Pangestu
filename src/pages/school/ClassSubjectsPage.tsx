@@ -53,7 +53,7 @@ export default function ClassSubjectsPage() {
         subject_id: form.subject_id!,
         teacher_id: form.teacher_id!,
         academic_year: form.academic_year!,
-        semester: form.semester ?? 1,
+        semester: form.semester ?? '1',
         created_at: new Date().toISOString(),
       };
       schoolService.createClassSubject(payload);
