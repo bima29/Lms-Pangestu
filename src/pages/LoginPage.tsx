@@ -42,13 +42,15 @@ const LoginPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-100 via-white to-accent-100 flex items-center justify-center p-4">
-      <motion.div
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
-        className="w-full max-w-md"
-      >
+    <div className="bg-gradient-to-br from-primary-100 via-white to-accent-100">
+      <div className="container mx-auto px-4 py-8 pb-16 min-h-screen">
+        <div className="flex justify-center items-center min-h-full">
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="w-full max-w-md my-8"
+          >
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
@@ -155,7 +157,9 @@ const LoginPage: React.FC = () => {
             </p>
           </div>
         </Card>
-      </motion.div>
+          </motion.div>
+        </div>
+      </div>
     </div>
   );
 };

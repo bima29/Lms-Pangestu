@@ -102,9 +102,12 @@ CREATE TABLE majors (
     name VARCHAR(255) NOT NULL,
     code VARCHAR(10) UNIQUE NOT NULL,
     description TEXT,
+    school_id VARCHAR(36),
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_code (code)
+    FOREIGN KEY (school_id) REFERENCES schools(id),
+    INDEX idx_code (code),
+    INDEX idx_school_active (school_id, is_active)
 );
 
 -- Classes table
@@ -566,10 +569,10 @@ INSERT INTO users (id, email, password_hash, name, role, phone) VALUES
 ('5', 'ortu@school.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Ibu Siti Nurhaliza', 'parent', '081234567894');
 
 -- Insert sample majors
-INSERT INTO majors (id, name, code, description) VALUES
-('maj-1', 'Ilmu Pengetahuan Alam', 'IPA', 'Program studi IPA untuk siswa yang tertarik dengan sains'),
-('maj-2', 'Ilmu Pengetahuan Sosial', 'IPS', 'Program studi IPS untuk siswa yang tertarik dengan sosial'),
-('maj-3', 'Bahasa', 'BHS', 'Program studi Bahasa untuk siswa yang tertarik dengan linguistik');
+INSERT INTO majors (id, name, code, description, school_id) VALUES
+('maj-1', 'Ilmu Pengetahuan Alam', 'IPA', 'Program studi IPA untuk siswa yang tertarik dengan sains', 'sch-1'),
+('maj-2', 'Ilmu Pengetahuan Sosial', 'IPS', 'Program studi IPS untuk siswa yang tertarik dengan sosial', 'sch-1'),
+('maj-3', 'Bahasa', 'BHS', 'Program studi Bahasa untuk siswa yang tertarik dengan linguistik', 'sch-1');
 
 -- Insert sample subjects
 INSERT INTO subjects (id, name, code, description, credit_hours) VALUES

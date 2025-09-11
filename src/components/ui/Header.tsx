@@ -1,17 +1,30 @@
 import React from 'react';
-import { Bell, LogOut } from 'lucide-react';
+import { Bell, LogOut, Building } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { mockSchools } from '../../data/mockData';
 import Button from './Button';
 
 const Header: React.FC = () => {
   const { user, logout } = useAuth();
 
+  // Get school information for non-super admin users
+  const userSchool = user?.school_id ? mockSchools.find(school => school.id === user.school_id) : null;
+  const showSchoolInfo = user?.role !== 'super_admin' && userSchool;
+
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <div className="flex items-center">
+          <div className="flex items-center gap-4">
             <h1 className="text-xl font-semibold text-primary-900">Pangestu LMS</h1>
+            {showSchoolInfo && (
+              <div className="flex items-center gap-2 px-3 py-1 bg-primary-50 rounded-md border border-primary-200">
+                <Building className="h-4 w-4 text-primary-600" />
+                <span className="text-sm font-medium text-primary-700">
+                  Sekolah: {userSchool.name}
+                </span>
+              </div>
+            )}
           </div>
           
           <div className="flex items-center gap-4">
@@ -21,7 +34,7 @@ const Header: React.FC = () => {
 
             <div className="flex items-center gap-3">
               <img 
-                src={user?.avatar || 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=40&h=40&dpr=1'} 
+                src={user?.avatar_url || 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=40&h=40&dpr=1'} 
                 alt={user?.name}
                 className="h-8 w-8 rounded-full object-cover"
               />

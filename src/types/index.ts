@@ -90,6 +90,7 @@ export interface Major {
   name: string;
   code: string;
   description?: string;
+  school_id?: string;
   is_active: boolean;
   created_at: string;
   updated_at?: string;
@@ -444,6 +445,11 @@ export interface ActivityLog {
 // ============================================
 // UTILITY TYPES
 // ============================================
+
+export interface Option<T = string> {
+  value: T;
+  label: string;
+}
 
 export interface PaginationParams {
   page: number;

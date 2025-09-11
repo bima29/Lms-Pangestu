@@ -1,12 +1,40 @@
 import { 
   User, Student, Teacher, Parent, Major, Class, Subject, ClassSubject,
   CBTQuestion, CBTSession, CBTAttempt, CBTAnswer, 
-  AttendanceRecord, Grade, Assignment, LearningMaterial
+  AttendanceRecord, Grade, Assignment, LearningMaterial, School
 } from '../types';
 
 // ============================================
 // USERS DATA
 // ============================================
+
+// ============================================
+// SCHOOLS DATA
+// ============================================
+
+export const mockSchools: School[] = [
+  {
+    id: 'sch-1',
+    name: 'SMA Pangestu Jakarta',
+    address: 'Jl. Pangestu No. 123, Jakarta Selatan',
+    created_at: '2024-01-01T00:00:00Z',
+    updated_at: '2024-01-01T00:00:00Z'
+  },
+  {
+    id: 'sch-2',
+    name: 'SMA Pangestu Bandung',
+    address: 'Jl. Merdeka No. 456, Bandung',
+    created_at: '2024-01-01T00:00:00Z',
+    updated_at: '2024-01-01T00:00:00Z'
+  },
+  {
+    id: 'sch-3',
+    name: 'SMA Pangestu Surabaya',
+    address: 'Jl. Pemuda No. 789, Surabaya',
+    created_at: '2024-01-01T00:00:00Z',
+    updated_at: '2024-01-01T00:00:00Z'
+  }
+];
 
 export const mockUsers: User[] = [
   {
@@ -23,8 +51,9 @@ export const mockUsers: User[] = [
   {
     id: '2',
     email: 'admin@school.com',
-    name: 'Admin Sekolah',
+    name: 'Admin Sekolah Jakarta',
     role: 'school_admin',
+    school_id: 'sch-1',
     avatar_url: 'https://images.pexels.com/photos/1181690/pexels-photo-1181690.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=1',
     phone: '081234567891',
     is_active: true,
@@ -36,6 +65,7 @@ export const mockUsers: User[] = [
     email: 'guru@school.com',
     name: 'Pak Budi Santoso',
     role: 'teacher',
+    school_id: 'sch-1',
     avatar_url: 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=1',
     phone: '081234567892',
     is_active: true,
@@ -47,6 +77,7 @@ export const mockUsers: User[] = [
     email: 'siswa@school.com',
     name: 'Andi Pratama',
     role: 'student',
+    school_id: 'sch-1',
     avatar_url: 'https://images.pexels.com/photos/1758144/pexels-photo-1758144.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=1',
     phone: '081234567893',
     is_active: true,
@@ -58,6 +89,7 @@ export const mockUsers: User[] = [
     email: 'ortu@school.com',
     name: 'Ibu Siti Nurhaliza',
     role: 'parent',
+    school_id: 'sch-1',
     avatar_url: 'https://images.pexels.com/photos/1181686/pexels-photo-1181686.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=1',
     phone: '081234567894',
     is_active: true,
@@ -69,6 +101,7 @@ export const mockUsers: User[] = [
     email: 'guru2@school.com',
     name: 'Ibu Sari Dewi',
     role: 'teacher',
+    school_id: 'sch-2',
     avatar_url: 'https://images.pexels.com/photos/1181686/pexels-photo-1181686.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=1',
     phone: '081234567895',
     is_active: true,
@@ -80,8 +113,33 @@ export const mockUsers: User[] = [
     email: 'siswa2@school.com',
     name: 'Sari Wulandari',
     role: 'student',
+    school_id: 'sch-2',
     avatar_url: 'https://images.pexels.com/photos/1499327/pexels-photo-1499327.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=1',
     phone: '081234567896',
+    is_active: true,
+    created_at: '2024-01-01T00:00:00Z',
+    updated_at: '2024-01-01T00:00:00Z'
+  },
+  {
+    id: '8',
+    email: 'admin2@school.com',
+    name: 'Admin Sekolah Bandung',
+    role: 'school_admin',
+    school_id: 'sch-2',
+    avatar_url: 'https://images.pexels.com/photos/1181690/pexels-photo-1181690.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=1',
+    phone: '081234567897',
+    is_active: true,
+    created_at: '2024-01-01T00:00:00Z',
+    updated_at: '2024-01-01T00:00:00Z'
+  },
+  {
+    id: '9',
+    email: 'admin3@school.com',
+    name: 'Admin Sekolah Surabaya',
+    role: 'school_admin',
+    school_id: 'sch-3',
+    avatar_url: 'https://images.pexels.com/photos/1181690/pexels-photo-1181690.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=1',
+    phone: '081234567898',
     is_active: true,
     created_at: '2024-01-01T00:00:00Z',
     updated_at: '2024-01-01T00:00:00Z'
@@ -98,6 +156,7 @@ export const mockMajors: Major[] = [
     name: 'Ilmu Pengetahuan Alam',
     code: 'IPA',
     description: 'Program studi IPA untuk siswa yang tertarik dengan sains',
+    school_id: 'sch-1',
     is_active: true,
     created_at: '2024-01-01T00:00:00Z'
   },
@@ -106,6 +165,7 @@ export const mockMajors: Major[] = [
     name: 'Ilmu Pengetahuan Sosial',
     code: 'IPS',
     description: 'Program studi IPS untuk siswa yang tertarik dengan sosial',
+    school_id: 'sch-1',
     is_active: true,
     created_at: '2024-01-01T00:00:00Z'
   },
@@ -114,6 +174,7 @@ export const mockMajors: Major[] = [
     name: 'Bahasa',
     code: 'BHS',
     description: 'Program studi Bahasa untuk siswa yang tertarik dengan linguistik',
+    school_id: 'sch-1',
     is_active: true,
     created_at: '2024-01-01T00:00:00Z'
   }
