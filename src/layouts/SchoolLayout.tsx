@@ -6,55 +6,87 @@ import {
   GraduationCap, 
   Calendar, 
   FileText, 
- 
   BarChart3,
   Layers,
   BookOpen,
   Settings,
   UserCheck,
   Bell,
-  ClipboardList
+  ClipboardList,
+  Building,
+  CalendarDays,
+  MessageSquare
 } from 'lucide-react';
 import Header from '../components/ui/Header';
-import Sidebar from '../components/ui/Sidebar';
+import HierarchicalSidebar from '../components/ui/HierarchicalSidebar';
 
 const SchoolLayout: React.FC = () => {
-  const sidebarItems = [
-    // Dashboard
-    { name: 'Dashboard', path: '/school/dashboard', icon: LayoutDashboard },
-    
-    // User Management
-    { name: 'Manajemen Pengguna', path: '/school/users', icon: Users },
-    
-    // Academic Management
-    { name: 'Manajemen Jurusan', path: '/school/majors', icon: GraduationCap },
-    { name: 'Manajemen Kelas', path: '/school/classes', icon: GraduationCap },
-    { name: 'Mata Pelajaran', path: '/school/subjects', icon: BookOpen },
-    { name: 'Kelas & Mapel', path: '/school/class-subjects', icon: Layers },
-    { name: 'Jadwal Pelajaran', path: '/school/schedules', icon: Calendar },
-    
-    // Learning Management
-    { name: 'Materi Pembelajaran', path: '/school/materials', icon: BookOpen },
-    { name: 'Tugas & Penugasan', path: '/school/assignments', icon: ClipboardList },
-    
-    // Assessment Management
-    { name: 'CBT/Ujian', path: '/school/cbt', icon: FileText },
-    { name: 'Absensi', path: '/school/attendance', icon: UserCheck },
-    { name: 'Nilai & Penilaian', path: '/school/grades', icon: BarChart3 },
-    
-    // Communication
-    { name: 'Pengumuman', path: '/school/announcements', icon: Bell },
-    { name: 'Notifikasi', path: '/school/notifications', icon: Bell },
-    
-    // Reports & Settings
-    { name: 'Laporan', path: '/school/reports', icon: BarChart3 },
-    { name: 'Pengaturan Sekolah', path: '/school/settings', icon: Settings },
+  const sidebarGroups = [
+    {
+      title: 'Dashboard',
+      items: [
+        { name: 'Dashboard', path: '/school/dashboard', icon: LayoutDashboard }
+      ]
+    },
+    {
+      title: 'Profil Sekolah',
+      items: [
+        { name: 'Profil Sekolah', path: '/school/profile', icon: Building },
+        { name: 'Tahun Akademik', path: '/school/academic-year', icon: CalendarDays }
+      ]
+    },
+    {
+      title: 'Manajemen Pengguna',
+      items: [
+        { name: 'Pengguna', path: '/school/users', icon: Users }
+      ]
+    },
+    {
+      title: 'Manajemen Akademik',
+      items: [
+        { name: 'Jurusan', path: '/school/majors', icon: GraduationCap },
+        { name: 'Kelas', path: '/school/classes', icon: GraduationCap },
+        { name: 'Mata Pelajaran', path: '/school/subjects', icon: BookOpen },
+        { name: 'Kelas & Mapel', path: '/school/class-subjects', icon: Layers },
+        { name: 'Jadwal Pelajaran', path: '/school/schedules', icon: Calendar }
+      ]
+    },
+    {
+      title: 'Pembelajaran',
+      items: [
+        { name: 'Materi', path: '/school/materials', icon: BookOpen },
+        { name: 'Tugas', path: '/school/assignments', icon: ClipboardList }
+      ]
+    },
+    {
+      title: 'Penilaian',
+      items: [
+        { name: 'CBT/Ujian', path: '/school/cbt', icon: FileText },
+        { name: 'Absensi', path: '/school/attendance', icon: UserCheck },
+        { name: 'Nilai', path: '/school/grades', icon: BarChart3 }
+      ]
+    },
+    {
+      title: 'Komunikasi',
+      items: [
+        { name: 'Pengumuman', path: '/school/announcements', icon: Bell },
+        { name: 'Notifikasi', path: '/school/notifications', icon: Bell },
+        { name: 'Forum Diskusi', path: '/school/forum', icon: MessageSquare }
+      ]
+    },
+    {
+      title: 'Laporan & Pengaturan',
+      items: [
+        { name: 'Laporan', path: '/school/reports', icon: BarChart3 },
+        { name: 'Pengaturan', path: '/school/settings', icon: Settings }
+      ]
+    }
   ];
 
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
       <div className="flex-shrink-0">
-        <Sidebar items={sidebarItems} />
+        <HierarchicalSidebar groups={sidebarGroups} />
       </div>
       <div className="flex-1 flex flex-col min-w-0">
         <Header />

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Search, Plus, Edit, Trash2, ChevronLeft, ChevronRight, X, Users, GraduationCap } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, ChevronLeft, ChevronRight, X, GraduationCap } from 'lucide-react';
 import { schoolService } from '../../services/schoolService';
 import type { Class, PaginationParams, PaginationResult, Major, Teacher } from '../../types';
+import { useAuth } from '../../contexts/AuthContext';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import SearchSelect, { Option } from '../../components/ui/SearchSelect';
@@ -9,6 +10,7 @@ import SearchSelect, { Option } from '../../components/ui/SearchSelect';
 const defaultPage: PaginationParams = { page: 1, limit: 10, search: '' };
 
 export default function SchoolClasses() {
+  const { user } = useAuth();
   const [pagination, setPagination] = useState<PaginationParams>(defaultPage);
   const [result, setResult] = useState<PaginationResult<Class>>({ data: [], total: 0, page: 1, limit: 10, total_pages: 0 });
   const [loading, setLoading] = useState(false);
@@ -27,9 +29,18 @@ export default function SchoolClasses() {
 
   const load = () => {
     setLoading(true);
-    const res = schoolService.listClasses(pagination);
-    setResult(res);
-    setLoading(false);
+    try {
+      // Filter classes by school for school admins
+      const res = schoolService.listClasses(pagination);
+      const filteredData = user?.role === 'school_admin' 
+        ? { ...res, data: res.data.filter(c => c.school_id === user.school_id) }
+        : res;
+      setResult(filteredData);
+    } catch (error) {
+      console.error('Error loading classes:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const loadLookups = () => {
@@ -144,7 +155,7 @@ export default function SchoolClasses() {
       const now = new Date().toISOString();
       const payload: Class = {
         id: `cls-${Date.now()}`,
-        school_id: undefined,
+        school_id: user?.school_id || 'school-1',
         name: form.name!,
         major_id: form.major_id,
         grade_level: form.grade_level!,
@@ -167,27 +178,18 @@ export default function SchoolClasses() {
     load();
   };
 
-  const onEdit = (c: Class) => {
-    setEditing(c);
-    setForm({
-      name: c.name,
-      major_id: c.major_id,
-      grade_level: c.grade_level,
-      academic_year: c.academic_year,
-      homeroom_teacher_id: c.homeroom_teacher_id,
-      max_students: c.max_students,
-      is_active: c.is_active
-    });
-  };
 
-  const onDelete = (id: string) => {
-    if (!confirm('Hapus kelas ini?')) return;
-    schoolService.deleteClass(id);
-    load();
-  };
 
-  const majorOptions: Option<string>[] = majors.map(m => ({ value: m.id, label: `${m.code} — ${m.name}` }));
-  const teacherOptions: Option<string>[] = teachers.map(t => ({ value: t.id, label: `${t.user?.name ?? t.id}` }));
+  // Filter data by school for school admins
+  const filteredMajors = user?.role === 'school_admin' 
+    ? majors.filter(m => m.school_id === user.school_id)
+    : majors;
+  const filteredTeachers = user?.role === 'school_admin'
+    ? teachers.filter(t => t.user?.school_id === user.school_id)
+    : teachers;
+
+  const majorOptions: Option<string>[] = filteredMajors.map(m => ({ value: m.id, label: `${m.code} — ${m.name}` }));
+  const teacherOptions: Option<string>[] = filteredTeachers.map(t => ({ value: t.id, label: `${t.user?.name ?? t.id}` }));
 
   return (
     <div className="space-y-6">
@@ -233,22 +235,28 @@ export default function SchoolClasses() {
 
         {/* Table */}
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Kelas</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tahun Ajaran</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tingkat</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jurusan</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Wali Kelas</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Maks Siswa</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {result.data.length > 0 ? (
-                result.data.map((classItem) => (
+          {loading ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+              <span className="ml-2 text-gray-600">Memuat data...</span>
+            </div>
+          ) : (
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Kelas</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tahun Ajaran</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tingkat</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jurusan</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Wali Kelas</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Maks Siswa</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {result.data.length > 0 ? (
+                  result.data.map((classItem) => (
                   <tr key={classItem.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
@@ -269,10 +277,10 @@ export default function SchoolClasses() {
                       <div className="text-sm text-gray-900">{classItem.grade_level}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-500">{majors.find(m => m.id === classItem.major_id)?.name || '-'}</div>
+                      <div className="text-sm text-gray-500">{filteredMajors.find(m => m.id === classItem.major_id)?.name || '-'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-500">{teachers.find(t => t.id === classItem.homeroom_teacher_id)?.user?.name || '-'}</div>
+                      <div className="text-sm text-gray-500">{filteredTeachers.find(t => t.id === classItem.homeroom_teacher_id)?.user?.name || '-'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{classItem.max_students}</div>
@@ -318,6 +326,7 @@ export default function SchoolClasses() {
               )}
             </tbody>
           </table>
+          )}
         </div>
 
         {/* Enhanced Pagination */}

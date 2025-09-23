@@ -20,6 +20,13 @@ import SuperAdminDashboard from './pages/super-admin/SuperAdminDashboard.tsx';
 import SchoolManagement from './pages/super-admin/SchoolManagement.tsx';
 import SuperAdminUsers from './pages/super-admin/SuperAdminUsers.tsx';
 import SystemSettings from './pages/super-admin/SystemSettings.tsx';
+import AcademicGlobal from './pages/super-admin/AcademicGlobal.tsx';
+import SuperAdminAcademicYear from './pages/super-admin/AcademicYear.tsx';
+import CompetencyStandards from './pages/super-admin/CompetencyStandards.tsx';
+import CommunicationCenter from './pages/super-admin/CommunicationCenter.tsx';
+import SystemBackup from './pages/super-admin/SystemBackup.tsx';
+import SuperAdminReports from './pages/super-admin/SuperAdminReports.tsx';
+
 
 // School Pages
 import SchoolDashboard from './pages/school/SchoolDashboard.tsx';
@@ -27,7 +34,6 @@ import SchoolUsers from './pages/school/SchoolUsersPage.tsx';
 import SchoolClasses from './pages/school/SchoolClasses.tsx';
 import SchoolSchedules from './pages/school/SchoolSchedules.tsx';
 import SchoolCBT from './pages/school/SchoolCBT.tsx';
-import SuperAdminReports from './pages/super-admin/SuperAdminReports.tsx';
 import SchoolMajorManagement from './pages/school/SchoolMajorManagement.tsx';
 import SchoolSubjects from './pages/school/SubjectsPage.tsx';
 import ClassSubjectsPage from './pages/school/ClassSubjectsPage.tsx';
@@ -39,6 +45,9 @@ import SchoolGrades from './pages/school/SchoolGrades.tsx';
 import SchoolAnnouncements from './pages/school/SchoolAnnouncements.tsx';
 import SchoolNotifications from './pages/school/SchoolNotifications.tsx';
 import SchoolSettings from './pages/school/SchoolSettings.tsx';
+import SchoolProfile from './pages/school/SchoolProfile.tsx';
+import AcademicYear from './pages/school/AcademicYear.tsx';
+import ForumDiscussion from './pages/school/ForumDiscussion.tsx';
 
 // Teacher Pages
 import TeacherDashboard from './pages/teacher/TeacherDashboard.tsx';
@@ -51,6 +60,9 @@ import ManualCorrection from './pages/teacher/ManualCorrection.tsx';
 import TeacherAttendance from './pages/teacher/TeacherAttendance.tsx';
 import ManageQuestions from './pages/teacher/ManageQuestions.tsx';
 import TeacherGradebook from './pages/teacher/TeacherGradebook.tsx';
+import StudentList from './pages/teacher/StudentList.tsx';
+import TeacherForum from './pages/teacher/TeacherForum.tsx';
+import TeacherChat from './pages/teacher/TeacherChat.tsx';
 
 // Student Pages
 import StudentHome from './pages/student/StudentHome.tsx';
@@ -60,12 +72,22 @@ import StudentClasses from './pages/student/StudentClasses.tsx';
 import StudentMaterials from './pages/student/StudentMaterials.tsx';
 import StudentSchedule from './pages/student/StudentSchedule.tsx';
 import StudentAssignments from './pages/student/StudentAssignments.tsx';
+import StudentForum from './pages/student/StudentForum.tsx';
+import StudentAttendance from './pages/student/StudentAttendance.tsx';
+import StudentChat from './pages/student/StudentChat.tsx';
+import StudentReport from './pages/student/StudentReport.tsx';
 
 // Parent Pages
 import ParentDashboard from './pages/parent/ParentDashboard.tsx';
 import ParentChildren from './pages/parent/ParentChildren.tsx';
 import ParentGrades from './pages/parent/ParentGrades.tsx';
 import ParentNotifications from './pages/parent/ParentNotifications.tsx';
+import ChildSchedule from './pages/parent/ChildSchedule.tsx';
+import ChildAssignments from './pages/parent/ChildAssignments.tsx';
+import ChildAttendance from './pages/parent/ChildAttendance.tsx';
+import ParentChat from './pages/parent/ParentChat.tsx';
+import ProgressReport from './pages/parent/ProgressReport.tsx';
+import AttendanceSummary from './pages/parent/AttendanceSummary.tsx';
 
 function App() {
   return (
@@ -87,7 +109,12 @@ function App() {
             <Route path="dashboard" element={<SuperAdminDashboard />} />
             <Route path="schools" element={<SchoolManagement />} />
             <Route path="users" element={<SuperAdminUsers />} />
+            <Route path="academic-global" element={<AcademicGlobal />} />
+            <Route path="academic-year" element={<SuperAdminAcademicYear />} />
+            <Route path="competency-standards" element={<CompetencyStandards />} />
+            <Route path="communication" element={<CommunicationCenter />} />
             <Route path="system-settings" element={<SystemSettings />} />
+            <Route path="backup" element={<SystemBackup />} />
             <Route path="reports" element={<SuperAdminReports />} />
             <Route index element={<Navigate to="dashboard" replace />} />
           </Route>
@@ -99,11 +126,13 @@ function App() {
             </ProtectedRoute>
           }>
             <Route path="dashboard" element={<SchoolDashboard />} />
+            <Route path="profile" element={<SchoolProfile />} />
             <Route path="users" element={<SchoolUsers />} />
             <Route path="classes" element={<SchoolClasses />} />
             <Route path="majors" element={<SchoolMajorManagement />} />
             <Route path="subjects" element={<SchoolSubjects />} />
             <Route path="class-subjects" element={<ClassSubjectsPage />} />
+            <Route path="academic-year" element={<AcademicYear />} />
             <Route path="schedules" element={<SchoolSchedules />} />
             <Route path="cbt" element={<SchoolCBT />} />
             <Route path="assignments" element={<SchoolAssignments />} />
@@ -112,6 +141,7 @@ function App() {
             <Route path="grades" element={<SchoolGrades />} />
             <Route path="announcements" element={<SchoolAnnouncements />} />
             <Route path="notifications" element={<SchoolNotifications />} />
+            <Route path="forum" element={<ForumDiscussion />} />
             <Route path="reports" element={<SchoolReports />} />
             <Route path="settings" element={<SchoolSettings />} />
             <Route index element={<Navigate to="dashboard" replace />} />
@@ -125,6 +155,7 @@ function App() {
           }>
             <Route path="dashboard" element={<TeacherDashboard />} />
             <Route path="classes" element={<TeacherClasses />} />
+            <Route path="students" element={<StudentList />} />
             <Route path="materials" element={<TeacherMaterials />} />
             <Route path="assignments" element={<TeacherMaterials />} />
             <Route path="cbt" element={<TeacherCBT />} />
@@ -135,6 +166,8 @@ function App() {
             <Route path="manual-correction" element={<ManualCorrection />} />
             <Route path="attendance" element={<TeacherAttendance />} />
             <Route path="gradebook" element={<TeacherGradebook />} />
+            <Route path="forum" element={<TeacherForum />} />
+            <Route path="chat" element={<TeacherChat />} />
             <Route index element={<Navigate to="dashboard" replace />} />
           </Route>
           
@@ -151,6 +184,10 @@ function App() {
             <Route path="cbt" element={<StudentCBT />} />
             <Route path="schedule" element={<StudentSchedule />} />
             <Route path="grades" element={<StudentGrades />} />
+            <Route path="forum" element={<StudentForum />} />
+            <Route path="attendance" element={<StudentAttendance />} />
+            <Route path="chat" element={<StudentChat />} />
+            <Route path="report" element={<StudentReport />} />
             <Route index element={<Navigate to="dashboard" replace />} />
           </Route>
           
@@ -162,7 +199,13 @@ function App() {
           }>
             <Route path="dashboard" element={<ParentDashboard />} />
             <Route path="children" element={<ParentChildren />} />
+            <Route path="schedule" element={<ChildSchedule />} />
+            <Route path="assignments" element={<ChildAssignments />} />
+            <Route path="attendance" element={<ChildAttendance />} />
             <Route path="grades" element={<ParentGrades />} />
+            <Route path="chat" element={<ParentChat />} />
+            <Route path="progress" element={<ProgressReport />} />
+            <Route path="attendance-summary" element={<AttendanceSummary />} />
             <Route path="notifications" element={<ParentNotifications />} />
             <Route index element={<Navigate to="dashboard" replace />} />
           </Route>

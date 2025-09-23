@@ -5,28 +5,62 @@ import {
   Building2, 
   Users, 
   Settings,
-  BarChart3} from 'lucide-react';
+  BarChart3,
+  GraduationCap,
+  MessageSquare,
+  HardDrive} from 'lucide-react';
 import Header from '../components/ui/Header';
-import Sidebar from '../components/ui/Sidebar';
+import HierarchicalSidebar from '../components/ui/HierarchicalSidebar';
 
 const SuperAdminLayout: React.FC = () => {
-  const sidebarItems = [
-    // Dashboard
-    { name: 'Dashboard', path: '/super-admin/dashboard', icon: LayoutDashboard },
-    // School Management
-    { name: 'Manajemen Sekolah', path: '/super-admin/schools', icon: Building2 },
-    // User Management
-    { name: 'Manajemen Pengguna', path: '/super-admin/users', icon: Users },
-    // System Settings
-    { name: 'Pengaturan Sistem', path: '/super-admin/system-settings', icon: Settings },
-    // Reports
-    { name: 'Laporan Sistem', path: '/super-admin/reports', icon: BarChart3 },
+  const sidebarGroups = [
+    {
+      title: 'Dashboard',
+      items: [
+        { name: 'Dashboard', path: '/super-admin/dashboard', icon: LayoutDashboard }
+      ]
+    },
+    {
+      title: 'Manajemen Sekolah',
+      items: [
+        { name: 'Sekolah', path: '/super-admin/schools', icon: Building2 },
+        { name: 'Pengguna', path: '/super-admin/users', icon: Users }
+      ]
+    },
+    {
+      title: 'Akademik Global',
+      items: [
+        { 
+          name: 'Manajemen Akademik', 
+          path: '/super-admin/academic-global', 
+          icon: GraduationCap
+        }
+      ]
+    },
+    {
+      title: 'Komunikasi',
+      items: [
+        { 
+          name: 'Pusat Komunikasi', 
+          path: '/super-admin/communication', 
+          icon: MessageSquare
+        }
+      ]
+    },
+    {
+      title: 'Sistem',
+      items: [
+        { name: 'Pengaturan Sistem', path: '/super-admin/system-settings', icon: Settings },
+        { name: 'Backup & Restore', path: '/super-admin/backup', icon: HardDrive },
+        { name: 'Laporan Sistem', path: '/super-admin/reports', icon: BarChart3 }
+      ]
+    }
   ];
 
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
       <div className="flex-shrink-0">
-        <Sidebar items={sidebarItems} />
+        <HierarchicalSidebar groups={sidebarGroups} />
       </div>
       <div className="flex-1 flex flex-col min-w-0">
         <Header />

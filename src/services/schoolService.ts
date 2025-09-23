@@ -2,20 +2,20 @@ import { PaginationParams, PaginationResult, Subject, Class, Major, Teacher, Cla
 
 // Temporary in-memory stores (swap to real API later)
 let subjects: Subject[] = [
-  { id: 'sub-1', name: 'Matematika', code: 'MTK', description: 'Mata pelajaran Matematika', credit_hours: 4, is_active: true, created_at: new Date().toISOString() },
-  { id: 'sub-2', name: 'Fisika', code: 'FIS', description: 'Mata pelajaran Fisika', credit_hours: 3, is_active: true, created_at: new Date().toISOString() },
-  { id: 'sub-3', name: 'Kimia', code: 'KIM', description: 'Mata pelajaran Kimia', credit_hours: 3, is_active: true, created_at: new Date().toISOString() },
-  { id: 'sub-4', name: 'Biologi', code: 'BIO', description: 'Mata pelajaran Biologi', credit_hours: 3, is_active: true, created_at: new Date().toISOString() },
-  { id: 'sub-5', name: 'Bahasa Indonesia', code: 'BIN', description: 'Mata pelajaran Bahasa Indonesia', credit_hours: 4, is_active: true, created_at: new Date().toISOString() },
-  { id: 'sub-6', name: 'Bahasa Inggris', code: 'BIG', description: 'Mata pelajaran Bahasa Inggris', credit_hours: 3, is_active: true, created_at: new Date().toISOString() },
+  { id: 'sub-1', school_id: 'school-1', name: 'Matematika', code: 'MTK', description: 'Mata pelajaran Matematika', credit_hours: 4, is_active: true, created_at: new Date().toISOString() },
+  { id: 'sub-2', school_id: 'school-1', name: 'Fisika', code: 'FIS', description: 'Mata pelajaran Fisika', credit_hours: 3, is_active: true, created_at: new Date().toISOString() },
+  { id: 'sub-3', school_id: 'school-1', name: 'Kimia', code: 'KIM', description: 'Mata pelajaran Kimia', credit_hours: 3, is_active: true, created_at: new Date().toISOString() },
+  { id: 'sub-4', school_id: 'school-1', name: 'Biologi', code: 'BIO', description: 'Mata pelajaran Biologi', credit_hours: 3, is_active: true, created_at: new Date().toISOString() },
+  { id: 'sub-5', school_id: 'school-1', name: 'Bahasa Indonesia', code: 'BIN', description: 'Mata pelajaran Bahasa Indonesia', credit_hours: 4, is_active: true, created_at: new Date().toISOString() },
+  { id: 'sub-6', school_id: 'school-1', name: 'Bahasa Inggris', code: 'BIG', description: 'Mata pelajaran Bahasa Inggris', credit_hours: 3, is_active: true, created_at: new Date().toISOString() },
 ];
 let classesStore: Class[] = [];
 let classSubjectsStore: ClassSubject[] = [];
 let schedulesStore: Schedule[] = [];
 let majors: Major[] = [
-  { id: 'maj-1', name: 'Ilmu Pengetahuan Alam', code: 'IPA', description: 'Program studi IPA', is_active: true, created_at: new Date().toISOString() },
-  { id: 'maj-2', name: 'Ilmu Pengetahuan Sosial', code: 'IPS', description: 'Program studi IPS', is_active: true, created_at: new Date().toISOString() },
-  { id: 'maj-3', name: 'Bahasa', code: 'BHS', description: 'Program studi Bahasa', is_active: true, created_at: new Date().toISOString() }
+  { id: 'maj-1', name: 'Ilmu Pengetahuan Alam', code: 'IPA', description: 'Program studi IPA', school_id: 'school-1', is_active: true, created_at: new Date().toISOString() },
+  { id: 'maj-2', name: 'Ilmu Pengetahuan Sosial', code: 'IPS', description: 'Program studi IPS', school_id: 'school-1', is_active: true, created_at: new Date().toISOString() },
+  { id: 'maj-3', name: 'Bahasa', code: 'BHS', description: 'Program studi Bahasa', school_id: 'school-1', is_active: true, created_at: new Date().toISOString() }
 ];
 let teachers: Teacher[] = [
   {
@@ -31,6 +31,26 @@ let teachers: Teacher[] = [
       email: 'guru@school.com',
       name: 'Pak Budi Santoso',
       role: 'teacher',
+      school_id: 'school-1',
+      is_active: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }
+  },
+  {
+    id: 'tea-2',
+    user_id: '4',
+    employee_id: 'EMP002',
+    specialization: 'Fisika',
+    hire_date: '2021-08-15',
+    status: 'active',
+    created_at: new Date().toISOString(),
+    user: {
+      id: '4',
+      email: 'fisika@school.com',
+      name: 'Ibu Sari Dewi',
+      role: 'teacher',
+      school_id: 'school-1',
       is_active: true,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()

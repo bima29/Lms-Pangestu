@@ -19,12 +19,25 @@ const SuperAdminUsers: React.FC = () => {
     phone: '',
     role: 'student' as User['role'],
     school_id: '',
-    is_active: true
+    is_active: true,
+    password: '',
+    employee_id: '',
+    student_id: '',
+    specialization: '',
+    hire_date: '',
+    salary: '',
+    occupation: '',
+    address: '',
+    emergency_contact: ''
   });
   const [errors, setErrors] = useState({
     name: '',
     email: '',
-    phone: ''
+    phone: '',
+    password: '',
+    employee_id: '',
+    student_id: '',
+    salary: ''
   });
   
   // Pagination state
@@ -55,7 +68,7 @@ const SuperAdminUsers: React.FC = () => {
   }, [searchTerm, roleFilter, schoolFilter, statusFilter]);
 
   const validateForm = () => {
-    const newErrors = { name: '', email: '', phone: '' };
+    const newErrors = { name: '', email: '', phone: '', password: '', employee_id: '', student_id: '', salary: '' };
     let isValid = true;
 
     if (!formData.name.trim()) {
@@ -74,8 +87,44 @@ const SuperAdminUsers: React.FC = () => {
       isValid = false;
     }
 
+    if (!selectedUser && !formData.password.trim()) {
+      newErrors.password = 'Password wajib diisi untuk pengguna baru';
+      isValid = false;
+    } else if (formData.password && formData.password.length < 6) {
+      newErrors.password = 'Password minimal 6 karakter';
+      isValid = false;
+    }
+
     if (formData.phone && !/^08\d{8,11}$/.test(formData.phone)) {
       newErrors.phone = 'Format nomor HP tidak valid (08xxxxxxxxx)';
+      isValid = false;
+    }
+
+    // Role-specific validations
+    if (formData.role === 'teacher' && formData.employee_id && users.some(u => 
+      u.role === 'teacher' && u.id !== selectedUser?.id && 
+      (u as any).employee_id === formData.employee_id
+    )) {
+      newErrors.employee_id = 'ID Pegawai sudah digunakan';
+      isValid = false;
+    }
+
+    if (formData.role === 'student' && formData.student_id && users.some(u => 
+      u.role === 'student' && u.id !== selectedUser?.id && 
+      (u as any).student_id === formData.student_id
+    )) {
+      newErrors.student_id = 'ID Siswa sudah digunakan';
+      isValid = false;
+    }
+
+    if (formData.role === 'teacher' && formData.salary && isNaN(Number(formData.salary))) {
+      newErrors.salary = 'Gaji harus berupa angka';
+      isValid = false;
+    }
+
+    // School assignment validation
+    if (formData.role !== 'super_admin' && !formData.school_id) {
+      newErrors.email = 'Sekolah wajib dipilih untuk role selain Super Admin';
       isValid = false;
     }
 
@@ -101,10 +150,25 @@ const SuperAdminUsers: React.FC = () => {
         email: formData.email.trim(),
         phone: formData.phone.trim() || undefined,
         role: formData.role,
-        school_id: formData.school_id || undefined,
+        school_id: formData.role === 'super_admin' ? undefined : formData.school_id,
         is_active: formData.is_active,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        // Role-specific fields (in real app, these would be in separate tables)
+        ...(formData.role === 'teacher' && {
+          employee_id: formData.employee_id || undefined,
+          specialization: formData.specialization || undefined,
+          hire_date: formData.hire_date || undefined,
+          salary: formData.salary ? Number(formData.salary) : undefined
+        }),
+        ...(formData.role === 'student' && {
+          student_id: formData.student_id || undefined
+        }),
+        ...(formData.role === 'parent' && {
+          occupation: formData.occupation || undefined,
+          address: formData.address || undefined,
+          emergency_contact: formData.emergency_contact || undefined
+        })
       };
       setUsers([...users, newUser]);
       resetForm();
@@ -122,9 +186,24 @@ const SuperAdminUsers: React.FC = () => {
               email: formData.email.trim(),
               phone: formData.phone.trim() || undefined,
               role: formData.role,
-              school_id: formData.school_id || undefined,
+              school_id: formData.role === 'super_admin' ? undefined : formData.school_id,
               is_active: formData.is_active,
-              updated_at: new Date().toISOString()
+              updated_at: new Date().toISOString(),
+              // Role-specific fields (in real app, these would be in separate tables)
+              ...(formData.role === 'teacher' && {
+                employee_id: formData.employee_id || undefined,
+                specialization: formData.specialization || undefined,
+                hire_date: formData.hire_date || undefined,
+                salary: formData.salary ? Number(formData.salary) : undefined
+              }),
+              ...(formData.role === 'student' && {
+                student_id: formData.student_id || undefined
+              }),
+              ...(formData.role === 'parent' && {
+                occupation: formData.occupation || undefined,
+                address: formData.address || undefined,
+                emergency_contact: formData.emergency_contact || undefined
+              })
             }
           : user
       );
@@ -154,8 +233,12 @@ const SuperAdminUsers: React.FC = () => {
   };
 
   const resetForm = () => {
-    setFormData({ name: '', email: '', phone: '', role: 'student', school_id: '', is_active: true });
-    setErrors({ name: '', email: '', phone: '' });
+    setFormData({ 
+      name: '', email: '', phone: '', role: 'student', school_id: '', is_active: true,
+      password: '', employee_id: '', student_id: '', specialization: '', hire_date: '', 
+      salary: '', occupation: '', address: '', emergency_contact: ''
+    });
+    setErrors({ name: '', email: '', phone: '', password: '', employee_id: '', student_id: '', salary: '' });
   };
 
   const openEditModal = (user: User) => {
@@ -166,9 +249,18 @@ const SuperAdminUsers: React.FC = () => {
       phone: user.phone || '',
       role: user.role,
       school_id: user.school_id || '',
-      is_active: user.is_active
+      is_active: user.is_active,
+      password: '',
+      employee_id: (user as any).employee_id || '',
+      student_id: (user as any).student_id || '',
+      specialization: (user as any).specialization || '',
+      hire_date: (user as any).hire_date || '',
+      salary: (user as any).salary ? String((user as any).salary) : '',
+      occupation: (user as any).occupation || '',
+      address: (user as any).address || '',
+      emergency_contact: (user as any).emergency_contact || ''
     });
-    setErrors({ name: '', email: '', phone: '' });
+    setErrors({ name: '', email: '', phone: '', password: '', employee_id: '', student_id: '', salary: '' });
     setShowEditModal(true);
   };
 
@@ -603,6 +695,21 @@ const SuperAdminUsers: React.FC = () => {
                 )}
               </div>
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Password *</label>
+                <input
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    errors.password ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                  placeholder="Masukkan password"
+                />
+                {errors.password && (
+                  <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+                )}
+              </div>
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
                 <select
                   value={formData.role}
@@ -617,7 +724,7 @@ const SuperAdminUsers: React.FC = () => {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Sekolah</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Sekolah {formData.role !== 'super_admin' && '*'}</label>
                 <select
                   value={formData.school_id}
                   onChange={(e) => setFormData({ ...formData, school_id: e.target.value })}
@@ -633,6 +740,115 @@ const SuperAdminUsers: React.FC = () => {
                   <p className="mt-1 text-sm text-gray-500">Super Admin tidak perlu ditentukan sekolah</p>
                 )}
               </div>
+              
+              {/* Role-specific fields */}
+              {formData.role === 'teacher' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">ID Pegawai</label>
+                    <input
+                      type="text"
+                      value={formData.employee_id}
+                      onChange={(e) => setFormData({ ...formData, employee_id: e.target.value })}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        errors.employee_id ? 'border-red-300' : 'border-gray-300'
+                      }`}
+                      placeholder="Masukkan ID pegawai"
+                    />
+                    {errors.employee_id && (
+                      <p className="mt-1 text-sm text-red-600">{errors.employee_id}</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Spesialisasi/Bidang Keahlian</label>
+                    <input
+                      type="text"
+                      value={formData.specialization}
+                      onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Contoh: Matematika, Fisika, dll"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal Bergabung</label>
+                    <input
+                      type="date"
+                      value={formData.hire_date}
+                      onChange={(e) => setFormData({ ...formData, hire_date: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Gaji (Rp)</label>
+                    <input
+                      type="number"
+                      value={formData.salary}
+                      onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        errors.salary ? 'border-red-300' : 'border-gray-300'
+                      }`}
+                      placeholder="Masukkan gaji"
+                    />
+                    {errors.salary && (
+                      <p className="mt-1 text-sm text-red-600">{errors.salary}</p>
+                    )}
+                  </div>
+                </>
+              )}
+              
+              {formData.role === 'student' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">ID Siswa/NIS</label>
+                  <input
+                    type="text"
+                    value={formData.student_id}
+                    onChange={(e) => setFormData({ ...formData, student_id: e.target.value })}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      errors.student_id ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                    placeholder="Masukkan NIS siswa"
+                  />
+                  {errors.student_id && (
+                    <p className="mt-1 text-sm text-red-600">{errors.student_id}</p>
+                  )}
+                </div>
+              )}
+              
+              {formData.role === 'parent' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Pekerjaan</label>
+                    <input
+                      type="text"
+                      value={formData.occupation}
+                      onChange={(e) => setFormData({ ...formData, occupation: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Masukkan pekerjaan"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Alamat</label>
+                    <textarea
+                      value={formData.address}
+                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Masukkan alamat lengkap"
+                      rows={2}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Kontak Darurat</label>
+                    <input
+                      type="tel"
+                      value={formData.emergency_contact}
+                      onChange={(e) => setFormData({ ...formData, emergency_contact: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="08xxxxxxxxx"
+                    />
+                  </div>
+                </>
+              )}
+              
               <div className="flex items-center">
                 <input
                   type="checkbox"
@@ -722,6 +938,21 @@ const SuperAdminUsers: React.FC = () => {
                 )}
               </div>
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <input
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    errors.password ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                  placeholder="Kosongkan jika tidak ingin mengubah password"
+                />
+                {errors.password && (
+                  <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+                )}
+              </div>
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
                 <select
                   value={formData.role}
@@ -736,7 +967,7 @@ const SuperAdminUsers: React.FC = () => {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Sekolah</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Sekolah {formData.role !== 'super_admin' && '*'}</label>
                 <select
                   value={formData.school_id}
                   onChange={(e) => setFormData({ ...formData, school_id: e.target.value })}
@@ -752,6 +983,115 @@ const SuperAdminUsers: React.FC = () => {
                   <p className="mt-1 text-sm text-gray-500">Super Admin tidak perlu ditentukan sekolah</p>
                 )}
               </div>
+              
+              {/* Role-specific fields for Edit Modal */}
+              {formData.role === 'teacher' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">ID Pegawai</label>
+                    <input
+                      type="text"
+                      value={formData.employee_id}
+                      onChange={(e) => setFormData({ ...formData, employee_id: e.target.value })}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        errors.employee_id ? 'border-red-300' : 'border-gray-300'
+                      }`}
+                      placeholder="Masukkan ID pegawai"
+                    />
+                    {errors.employee_id && (
+                      <p className="mt-1 text-sm text-red-600">{errors.employee_id}</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Spesialisasi/Bidang Keahlian</label>
+                    <input
+                      type="text"
+                      value={formData.specialization}
+                      onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Contoh: Matematika, Fisika, dll"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal Bergabung</label>
+                    <input
+                      type="date"
+                      value={formData.hire_date}
+                      onChange={(e) => setFormData({ ...formData, hire_date: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Gaji (Rp)</label>
+                    <input
+                      type="number"
+                      value={formData.salary}
+                      onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        errors.salary ? 'border-red-300' : 'border-gray-300'
+                      }`}
+                      placeholder="Masukkan gaji"
+                    />
+                    {errors.salary && (
+                      <p className="mt-1 text-sm text-red-600">{errors.salary}</p>
+                    )}
+                  </div>
+                </>
+              )}
+              
+              {formData.role === 'student' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">ID Siswa/NIS</label>
+                  <input
+                    type="text"
+                    value={formData.student_id}
+                    onChange={(e) => setFormData({ ...formData, student_id: e.target.value })}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      errors.student_id ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                    placeholder="Masukkan NIS siswa"
+                  />
+                  {errors.student_id && (
+                    <p className="mt-1 text-sm text-red-600">{errors.student_id}</p>
+                  )}
+                </div>
+              )}
+              
+              {formData.role === 'parent' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Pekerjaan</label>
+                    <input
+                      type="text"
+                      value={formData.occupation}
+                      onChange={(e) => setFormData({ ...formData, occupation: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Masukkan pekerjaan"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Alamat</label>
+                    <textarea
+                      value={formData.address}
+                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Masukkan alamat lengkap"
+                      rows={2}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Kontak Darurat</label>
+                    <input
+                      type="tel"
+                      value={formData.emergency_contact}
+                      onChange={(e) => setFormData({ ...formData, emergency_contact: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="08xxxxxxxxx"
+                    />
+                  </div>
+                </>
+              )}
+              
               <div className="flex items-center">
                 <input
                   type="checkbox"
