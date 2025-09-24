@@ -1,85 +1,58 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Building2, 
   Plus, 
-  Search, 
   Edit, 
   Trash2, 
+  Search, 
+  MapPin, 
   Users, 
-  Calendar, 
-  X, 
-  Save,
-  MapPin,
-  Phone,
-  Mail,
-  Globe,
+  Calendar,
   Eye,
-  Filter,
-  Download,
-  Upload,
-  RefreshCw,
+  X,
+  ChevronLeft,
+  ChevronRight,
   CheckCircle,
-  AlertCircle,
-  TrendingUp,
-  BarChart3
+  AlertCircle
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
-import { mockSchools, mockUsers } from '../../data/mockData';
-import { School, User } from '../../types';
-
-interface ExtendedSchool extends School {
-  totalUsers: number;
-  totalStudents: number;
-  totalTeachers: number;
-  totalAdmins: number;
-  status: 'active' | 'inactive';
-  phone?: string;
-  email?: string;
-  website?: string;
-  principal?: string;
-  established_year?: number;
-  accreditation?: 'A' | 'B' | 'C';
-}
+import { School } from '../../types';
 
 interface SchoolFormData {
   name: string;
   address: string;
-  phone?: string;
-  email?: string;
-  website?: string;
-  principal?: string;
-  established_year?: number;
-  accreditation?: 'A' | 'B' | 'C';
-  status: 'active' | 'inactive';
+  phone: string;
+  email: string;
+  principal_name: string;
+  npsn: string;
+  accreditation: 'A' | 'B' | 'C';
+  established_year: number;
+  website: string;
+  is_active: boolean;
 }
 
 interface SchoolStats {
-  totalSchools: number;
-  activeSchools: number;
-  totalUsers: number;
-  averageUsersPerSchool: number;
-  newSchoolsThisMonth: number;
+  total_users: number;
+  total_students: number;
+  total_teachers: number;
+  total_classes: number;
+  last_activity: string;
 }
 
 const SchoolManagement: React.FC = () => {
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
+  const [schools, setSchools] = useState<School[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [accreditationFilter, setAccreditationFilter] = useState('');
-  const [sortBy, setSortBy] = useState('name');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   
   // Modal states
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [showBulkModal, setShowBulkModal] = useState(false);
   const [selectedSchool, setSelectedSchool] = useState<School | null>(null);
-  const [selectedSchools, setSelectedSchools] = useState<Set<string>>(new Set());
   
   // Form state
   const [formData, setFormData] = useState<SchoolFormData>({
@@ -87,150 +60,154 @@ const SchoolManagement: React.FC = () => {
     address: '',
     phone: '',
     email: '',
-    website: '',
-    principal: '',
-    established_year: new Date().getFullYear(),
+    principal_name: '',
+    npsn: '',
     accreditation: 'A',
-    status: 'active' as 'active' | 'inactive'
+    established_year: new Date().getFullYear(),
+    website: '',
+    is_active: true
   });
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   
-  // Data states
-  const [schools, setSchools] = useState<ExtendedSchool[]>([]);
-  const [stats, setStats] = useState<SchoolStats>({
-    totalSchools: 0,
-    activeSchools: 0,
-    totalUsers: 0,
-    averageUsersPerSchool: 0,
-    newSchoolsThisMonth: 0
-  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [schoolStats, setSchoolStats] = useState<Record<string, SchoolStats>>({});
 
+  // Load initial data
   useEffect(() => {
     loadSchools();
-    calculateStats();
   }, []);
 
-  const loadSchools = () => {
-    // Transform mock schools with additional data
-    const extendedSchools: ExtendedSchool[] = mockSchools.map(school => {
-      const schoolUsers = mockUsers.filter(u => u.school_id === school.id);
-      return {
-        ...school,
-        totalUsers: schoolUsers.length,
-        totalStudents: schoolUsers.filter(u => u.role === 'student').length,
-        totalTeachers: schoolUsers.filter(u => u.role === 'teacher').length,
-        totalAdmins: schoolUsers.filter(u => u.role === 'school_admin').length,
-        status: 'active' as 'active' | 'inactive',
-        phone: '+62 21 1234567',
-        email: `info@${school.name.toLowerCase().replace(/\s+/g, '')}.sch.id`,
-        website: `www.${school.name.toLowerCase().replace(/\s+/g, '')}.sch.id`,
-        principal: 'Dr. Ahmad Susanto, M.Pd',
-        established_year: 1995,
-        accreditation: 'A' as 'A'
-      };
-    });
-    setSchools(extendedSchools);
-  };
-
-  const calculateStats = () => {
-    const totalSchools = mockSchools.length;
-    const activeSchools = totalSchools; // Assume all active for now
-    const totalUsers = mockUsers.length;
-    const averageUsersPerSchool = totalSchools > 0 ? Math.round(totalUsers / totalSchools) : 0;
-    const newSchoolsThisMonth = Math.floor(totalSchools * 0.1); // Simulate 10% growth
-
-    setStats({
-      totalSchools,
-      activeSchools,
-      totalUsers,
-      averageUsersPerSchool,
-      newSchoolsThisMonth
-    });
+  const loadSchools = async () => {
+    setLoading(true);
+    try {
+      // Simulate API call with mock data
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const mockSchools: School[] = [
+        {
+          id: 'sch-1',
+          name: 'SMA Pangestu Jakarta',
+          address: 'Jl. Pangestu No. 123, Jakarta Selatan',
+          phone: '021-12345678',
+          email: 'info@smapangestu-jkt.sch.id',
+          principal_name: 'Dr. Ahmad Susanto, M.Pd',
+          npsn: '20104001',
+          accreditation: 'A',
+          established_year: 1985,
+          website: 'www.smapangestu-jakarta.sch.id',
+          is_active: true,
+          created_at: '2024-01-01T00:00:00Z',
+          updated_at: '2024-01-01T00:00:00Z'
+        },
+        {
+          id: 'sch-2',
+          name: 'SMA Pangestu Bandung',
+          address: 'Jl. Merdeka No. 456, Bandung',
+          phone: '022-87654321',
+          email: 'info@smapangestu-bdg.sch.id',
+          principal_name: 'Prof. Dr. Siti Nurhaliza, M.Pd',
+          npsn: '20104002',
+          accreditation: 'A',
+          established_year: 1990,
+          website: 'www.smapangestu-bandung.sch.id',
+          is_active: true,
+          created_at: '2024-01-01T00:00:00Z',
+          updated_at: '2024-01-01T00:00:00Z'
+        },
+        {
+          id: 'sch-3',
+          name: 'SMA Pangestu Surabaya',
+          address: 'Jl. Pemuda No. 789, Surabaya',
+          phone: '031-11223344',
+          email: 'info@smapangestu-sby.sch.id',
+          principal_name: 'Drs. Budi Santoso, M.M',
+          npsn: '20104003',
+          accreditation: 'B',
+          established_year: 1995,
+          website: 'www.smapangestu-surabaya.sch.id',
+          is_active: false,
+          created_at: '2024-01-01T00:00:00Z',
+          updated_at: '2024-01-01T00:00:00Z'
+        }
+      ];
+      
+      setSchools(mockSchools);
+      
+      // Load stats for each school
+      const stats: Record<string, SchoolStats> = {};
+      mockSchools.forEach(school => {
+        stats[school.id] = {
+          total_users: Math.floor(Math.random() * 500) + 100,
+          total_students: Math.floor(Math.random() * 400) + 80,
+          total_teachers: Math.floor(Math.random() * 50) + 20,
+          total_classes: Math.floor(Math.random() * 20) + 5,
+          last_activity: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString()
+        };
+      });
+      setSchoolStats(stats);
+      
+    } catch (error) {
+      console.error('Error loading schools:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Form validation
   const validateForm = (): boolean => {
-    const errors: Record<string, string> = {};
+    const newErrors: Record<string, string> = {};
 
     if (!formData.name.trim()) {
-      errors.name = 'Nama sekolah wajib diisi';
-    } else if (formData.name.trim().length < 3) {
-      errors.name = 'Nama sekolah minimal 3 karakter';
+      newErrors.name = 'Nama sekolah wajib diisi';
     }
 
     if (!formData.address.trim()) {
-      errors.address = 'Alamat wajib diisi';
-    } else if (formData.address.trim().length < 10) {
-      errors.address = 'Alamat minimal 10 karakter';
+      newErrors.address = 'Alamat sekolah wajib diisi';
     }
 
-    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      errors.email = 'Format email tidak valid';
+    if (!formData.phone.trim()) {
+      newErrors.phone = 'Nomor telepon wajib diisi';
+    } else if (!/^[0-9\-\+\(\)\s]+$/.test(formData.phone)) {
+      newErrors.phone = 'Format nomor telepon tidak valid';
     }
 
-    if (formData.phone && !/^[\d\-\+\(\)\s]+$/.test(formData.phone)) {
-      errors.phone = 'Format nomor telepon tidak valid';
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email sekolah wajib diisi';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Format email tidak valid';
     }
 
-    if (formData.website && !/^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/.test(formData.website)) {
-      errors.website = 'Format website tidak valid';
+    if (!formData.principal_name.trim()) {
+      newErrors.principal_name = 'Nama kepala sekolah wajib diisi';
     }
 
-    // Check for duplicate school name
-    const isDuplicate = schools.some(school => 
-      school.name.toLowerCase() === formData.name.trim().toLowerCase() && 
-      (!selectedSchool || school.id !== selectedSchool.id)
+    if (!formData.npsn.trim()) {
+      newErrors.npsn = 'NPSN wajib diisi';
+    } else if (!/^\d{8}$/.test(formData.npsn)) {
+      newErrors.npsn = 'NPSN harus 8 digit angka';
+    }
+
+    if (formData.established_year < 1900 || formData.established_year > new Date().getFullYear()) {
+      newErrors.established_year = 'Tahun berdiri tidak valid';
+    }
+
+    // Check for duplicate NPSN
+    const existingSchool = schools.find(s => 
+      s.npsn === formData.npsn && s.id !== selectedSchool?.id
     );
-    if (isDuplicate) {
-      errors.name = 'Nama sekolah sudah ada';
+    if (existingSchool) {
+      newErrors.npsn = 'NPSN sudah digunakan oleh sekolah lain';
     }
 
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  // Filter and sort schools
-  const getFilteredSchools = () => {
-    let filtered = [...schools];
-
-    // Apply search filter
-    if (searchTerm) {
-      const searchLower = searchTerm.toLowerCase();
-      filtered = filtered.filter(school => 
-        school.name.toLowerCase().includes(searchLower) ||
-        school.address.toLowerCase().includes(searchLower) ||
-        (school.principal && school.principal.toLowerCase().includes(searchLower))
-      );
+    // Check for duplicate email
+    const existingEmail = schools.find(s => 
+      s.email === formData.email && s.id !== selectedSchool?.id
+    );
+    if (existingEmail) {
+      newErrors.email = 'Email sudah digunakan oleh sekolah lain';
     }
 
-    // Apply status filter
-    if (statusFilter) {
-      filtered = filtered.filter(school => school.status === statusFilter);
-    }
-
-    // Apply accreditation filter
-    if (accreditationFilter) {
-      filtered = filtered.filter(school => school.accreditation === accreditationFilter);
-    }
-
-    // Apply sorting
-    filtered.sort((a, b) => {
-      let aValue: any = a[sortBy as keyof ExtendedSchool];
-      let bValue: any = b[sortBy as keyof ExtendedSchool];
-      
-      if (typeof aValue === 'string') {
-        aValue = aValue.toLowerCase();
-        bValue = bValue.toLowerCase();
-      }
-      
-      if (sortOrder === 'asc') {
-        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
-      } else {
-        return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
-      }
-    });
-
-    return filtered;
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   // Modal handlers
@@ -240,41 +217,43 @@ const SchoolManagement: React.FC = () => {
       address: '',
       phone: '',
       email: '',
-      website: '',
-      principal: '',
-      established_year: new Date().getFullYear(),
+      principal_name: '',
+      npsn: '',
       accreditation: 'A',
-      status: 'active'
+      established_year: new Date().getFullYear(),
+      website: '',
+      is_active: true
     });
-    setFormErrors({});
+    setErrors({});
     setShowAddModal(true);
   };
 
-  const openEditModal = (school: ExtendedSchool) => {
+  const openEditModal = (school: School) => {
     setSelectedSchool(school);
     setFormData({
       name: school.name,
       address: school.address || '',
       phone: school.phone || '',
       email: school.email || '',
-      website: school.website || '',
-      principal: school.principal || '',
-      established_year: school.established_year || new Date().getFullYear(),
+      principal_name: school.principal_name || '',
+      npsn: school.npsn || '',
       accreditation: school.accreditation || 'A',
-      status: school.status
+      established_year: school.established_year || new Date().getFullYear(),
+      website: school.website || '',
+      is_active: school.is_active ?? true
     });
-    setFormErrors({});
+    setErrors({});
     setShowEditModal(true);
   };
 
-  const openDetailModal = (school: ExtendedSchool) => {
-    setSelectedSchool(school);
-    setShowDetailModal(true);
-  };
-
-  const openDeleteModal = (school: ExtendedSchool) => {
+  const openDeleteModal = (school: School) => {
     setSelectedSchool(school);
     setShowDeleteModal(true);
+  };
+
+  const openDetailModal = (school: School) => {
+    setSelectedSchool(school);
+    setShowDetailModal(true);
   };
 
   const closeModals = () => {
@@ -282,20 +261,8 @@ const SchoolManagement: React.FC = () => {
     setShowEditModal(false);
     setShowDeleteModal(false);
     setShowDetailModal(false);
-    setShowBulkModal(false);
     setSelectedSchool(null);
-    setFormData({
-      name: '',
-      address: '',
-      phone: '',
-      email: '',
-      website: '',
-      principal: '',
-      established_year: new Date().getFullYear(),
-      accreditation: 'A',
-      status: 'active'
-    });
-    setFormErrors({});
+    setErrors({});
   };
 
   // CRUD operations
@@ -305,30 +272,39 @@ const SchoolManagement: React.FC = () => {
     try {
       setLoading(true);
       
-      const newSchool: ExtendedSchool = {
+      const newSchool: School = {
         id: `sch-${Date.now()}`,
-        name: formData.name.trim(),
-        address: formData.address.trim(),
+        name: formData.name,
+        address: formData.address,
         phone: formData.phone,
         email: formData.email,
-        website: formData.website,
-        principal: formData.principal,
-        established_year: formData.established_year,
+        principal_name: formData.principal_name,
+        npsn: formData.npsn,
         accreditation: formData.accreditation,
-        status: formData.status,
-        totalUsers: 0,
-        totalStudents: 0,
-        totalTeachers: 0,
-        totalAdmins: 0,
+        established_year: formData.established_year,
+        website: formData.website,
+        is_active: formData.is_active,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
-      
+
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      setSchools([newSchool, ...schools]);
-      calculateStats();
+      setSchools(prev => [newSchool, ...prev]);
+      
+      // Initialize stats for new school
+      setSchoolStats(prev => ({
+        ...prev,
+        [newSchool.id]: {
+          total_users: 0,
+          total_students: 0,
+          total_teachers: 0,
+          total_classes: 0,
+          last_activity: new Date().toISOString()
+        }
+      }));
+      
       closeModals();
     } catch (error) {
       console.error('Error adding school:', error);
@@ -343,22 +319,28 @@ const SchoolManagement: React.FC = () => {
     try {
       setLoading(true);
       
+      const updatedSchool: School = {
+        ...selectedSchool,
+        name: formData.name,
+        address: formData.address,
+        phone: formData.phone,
+        email: formData.email,
+        principal_name: formData.principal_name,
+        npsn: formData.npsn,
+        accreditation: formData.accreditation,
+        established_year: formData.established_year,
+        website: formData.website,
+        is_active: formData.is_active,
+        updated_at: new Date().toISOString()
+      };
+
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      const updatedSchools = schools.map(school =>
-        school.id === selectedSchool.id
-          ? { 
-              ...school, 
-              ...formData,
-              name: formData.name.trim(),
-              address: formData.address.trim(),
-              updated_at: new Date().toISOString()
-            }
-          : school
-      );
-      setSchools(updatedSchools);
-      calculateStats();
+      setSchools(prev => prev.map(school => 
+        school.id === selectedSchool.id ? updatedSchool : school
+      ));
+      
       closeModals();
     } catch (error) {
       console.error('Error updating school:', error);
@@ -376,9 +358,13 @@ const SchoolManagement: React.FC = () => {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      const updatedSchools = schools.filter(school => school.id !== selectedSchool.id);
-      setSchools(updatedSchools);
-      calculateStats();
+      setSchools(prev => prev.filter(school => school.id !== selectedSchool.id));
+      setSchoolStats(prev => {
+        const newStats = { ...prev };
+        delete newStats[selectedSchool.id];
+        return newStats;
+      });
+      
       closeModals();
     } catch (error) {
       console.error('Error deleting school:', error);
@@ -387,273 +373,103 @@ const SchoolManagement: React.FC = () => {
     }
   };
 
-  const handleBulkDelete = async () => {
-    if (selectedSchools.size === 0) return;
-
+  const toggleSchoolStatus = async (school: School) => {
     try {
-      setLoading(true);
-      
+      const updatedSchool = {
+        ...school,
+        is_active: !school.is_active,
+        updated_at: new Date().toISOString()
+      };
+
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 300));
       
-      const updatedSchools = schools.filter(school => !selectedSchools.has(school.id));
-      setSchools(updatedSchools);
-      setSelectedSchools(new Set());
-      calculateStats();
-      closeModals();
+      setSchools(prev => prev.map(s => 
+        s.id === school.id ? updatedSchool : s
+      ));
     } catch (error) {
-      console.error('Error bulk deleting schools:', error);
-    } finally {
-      setLoading(false);
+      console.error('Error toggling school status:', error);
     }
   };
 
-  const toggleSchoolSelection = (schoolId: string) => {
-    const newSelected = new Set(selectedSchools);
-    if (newSelected.has(schoolId)) {
-      newSelected.delete(schoolId);
+  // Filtering and pagination
+  const filteredSchools = schools.filter(school =>
+    school.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    school.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    school.npsn?.includes(searchTerm)
+  );
+
+  const totalPages = Math.ceil(filteredSchools.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedSchools = filteredSchools.slice(startIndex, startIndex + itemsPerPage);
+
+  // Generate page numbers for pagination
+  const getPageNumbers = () => {
+    const pages = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
     } else {
-      newSelected.add(schoolId);
+      if (currentPage <= 4) {
+        pages.push(1, 2, 3, 4, 5, '...', totalPages);
+      } else if (currentPage >= totalPages - 3) {
+        pages.push(1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+      } else {
+        pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages);
+      }
     }
-    setSelectedSchools(newSelected);
+    return pages;
   };
 
-  const toggleAllSchools = () => {
-    const filteredSchools = getFilteredSchools();
-    if (selectedSchools.size === filteredSchools.length) {
-      setSelectedSchools(new Set());
-    } else {
-      setSelectedSchools(new Set(filteredSchools.map(s => s.id)));
-    }
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('id-ID', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
   };
 
-  // Export functionality
-  const exportSchools = (format: 'csv' | 'excel') => {
-    const exportData = schools.map(school => ({
-      ID: school.id,
-      Name: school.name,
-      Address: school.address,
-      Phone: school.phone || '',
-      Email: school.email || '',
-      Website: school.website || '',
-      Principal: school.principal || '',
-      'Established Year': school.established_year || '',
-      Accreditation: school.accreditation || '',
-      'Total Users': school.totalUsers,
-      'Total Students': school.totalStudents,
-      'Total Teachers': school.totalTeachers,
-      Status: school.status,
-      'Created At': new Date(school.created_at).toLocaleDateString('id-ID')
-    }));
-
-    const filename = `schools_export_${new Date().toISOString().split('T')[0]}.${format}`;
-    const csvContent = format === 'csv' 
-      ? [
-          Object.keys(exportData[0]).join(','),
-          ...exportData.map(row => Object.values(row).join(','))
-        ].join('\n')
-      : JSON.stringify(exportData, null, 2);
+  const formatTimeAgo = (dateString: string) => {
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
     
-    const blob = new Blob([csvContent], { type: format === 'csv' ? 'text/csv' : 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    if (diffInHours < 1) return 'Baru saja';
+    if (diffInHours < 24) return `${diffInHours} jam yang lalu`;
+    return `${Math.floor(diffInHours / 24)} hari yang lalu`;
   };
 
-  const filteredSchools = getFilteredSchools();
+  if (loading && schools.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <span className="ml-3 text-gray-600">Memuat data sekolah...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       {/* Header */}
-    name: '',
-    address: ''
-  });
-  
-  const [schools, setSchools] = useState<School[]>([
-    {
-      id: '1',
-      name: 'SMA Negeri 1 Jakarta',
-      address: 'Jl. Merdeka No. 123, Jakarta Pusat',
-      totalUsers: 1250,
-      totalStudents: 1000,
-      totalTeachers: 45,
-      status: 'active',
-      createdAt: '2024-01-15'
-    },
-    {
-      id: '2', 
-      name: 'SMA Negeri 2 Bandung',
-      address: 'Jl. Asia Afrika No. 456, Bandung',
-      totalUsers: 980,
-      totalStudents: 800,
-      totalTeachers: 38,
-      status: 'active',
-      createdAt: '2024-02-10'
-    },
-    {
-      id: '3',
-      name: 'SMA Swasta Harapan',
-      address: 'Jl. Sudirman No. 789, Surabaya',
-      totalUsers: 650,
-      totalStudents: 500,
-      totalTeachers: 25,
-      status: 'inactive',
-      createdAt: '2024-03-05'
-    }
-  ]);
-
-  const filteredSchools = schools.filter(school => {
-    const matchesSearch = school.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         school.address.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === '' || school.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
-
-  const validateForm = () => {
-    const newErrors = { name: '', address: '' };
-    let isValid = true;
-
-    if (!formData.name.trim()) {
-      newErrors.name = 'Nama sekolah wajib diisi';
-      isValid = false;
-    } else if (formData.name.trim().length < 3) {
-      newErrors.name = 'Nama sekolah minimal 3 karakter';
-      isValid = false;
-    }
-
-    if (!formData.address.trim()) {
-      newErrors.address = 'Alamat wajib diisi';
-      isValid = false;
-    } else if (formData.address.trim().length < 10) {
-      newErrors.address = 'Alamat minimal 10 karakter';
-      isValid = false;
-    }
-
-    // Check for duplicate school name
-    const isDuplicate = schools.some(school => 
-      school.name.toLowerCase() === formData.name.trim().toLowerCase() && 
-      (!selectedSchool || school.id !== selectedSchool.id)
-    );
-    if (isDuplicate) {
-      newErrors.name = 'Nama sekolah sudah ada';
-      isValid = false;
-    }
-
-    setErrors(newErrors);
-    return isValid;
-  };
-
-  const handleAddSchool = () => {
-    if (validateForm()) {
-      const newSchool: School = {
-        id: (Date.now()).toString(),
-        name: formData.name.trim(),
-        address: formData.address.trim(),
-        totalUsers: 0,
-        totalStudents: 0,
-        totalTeachers: 0,
-        status: formData.status,
-        createdAt: new Date().toISOString().split('T')[0]
-      };
-      setSchools([...schools, newSchool]);
-      resetForm();
-      setShowAddModal(false);
-    }
-  };
-
-  const handleEditSchool = () => {
-    if (validateForm()) {
-      const updatedSchools = schools.map(school =>
-        school.id === selectedSchool!.id
-          ? { ...school, name: formData.name.trim(), address: formData.address.trim(), status: formData.status }
-          : school
-      );
-      setSchools(updatedSchools);
-      resetForm();
-      setSelectedSchool(null);
-      setShowEditModal(false);
-    }
-  };
-
-  const resetForm = () => {
-    setFormData({ name: '', address: '', status: 'active' });
-    setErrors({ name: '', address: '' });
-  };
-
-  const handleDeleteSchool = () => {
-    if (selectedSchool) {
-      const updatedSchools = schools.filter(school => school.id !== selectedSchool.id);
-      setSchools(updatedSchools);
-      setSelectedSchool(null);
-      setShowDeleteModal(false);
-    }
-  };
-
-  const openEditModal = (school: School) => {
-    setSelectedSchool(school);
-    setFormData({
-      name: school.name,
-      address: school.address,
-      status: school.status
-    });
-    setErrors({ name: '', address: '' });
-    setShowEditModal(true);
-  };
-
-  const closeAddModal = () => {
-    resetForm();
-    setShowAddModal(false);
-  };
-
-  const closeEditModal = () => {
-    resetForm();
-    setSelectedSchool(null);
-    setShowEditModal(false);
-  };
-
-  const openDeleteModal = (school: School) => {
-    setSelectedSchool(school);
-    setShowDeleteModal(true);
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Manajemen Sekolah</h1>
-          <p className="text-gray-600 mt-1">Kelola semua sekolah yang terdaftar di platform</p>
+          <h1 className="text-2xl font-bold text-gray-900">Manajemen Sekolah</h1>
+          <p className="text-gray-600 mt-1">Kelola semua sekolah yang terdaftar dalam platform</p>
         </div>
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            onClick={() => exportSchools('csv')}
-            className="flex items-center gap-2"
-          >
-            <Download className="h-4 w-4" />
-            Export CSV
-          </Button>
-          <Button 
-            onClick={openAddModal}
-            className="flex items-center gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Tambah Sekolah
-          </Button>
-        </div>
+        <Button onClick={openAddModal} className="flex items-center gap-2">
+          <Plus className="h-4 w-4" />
+          Tambah Sekolah
+        </Button>
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Total Sekolah</p>
-              <p className="text-2xl font-bold text-blue-600">{stats.totalSchools}</p>
+              <p className="text-2xl font-bold text-blue-600">{schools.length}</p>
             </div>
             <div className="p-3 bg-blue-100 rounded-full">
               <Building2 className="h-6 w-6 text-blue-600" />
@@ -665,7 +481,9 @@ const SchoolManagement: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Sekolah Aktif</p>
-              <p className="text-2xl font-bold text-green-600">{stats.activeSchools}</p>
+              <p className="text-2xl font-bold text-green-600">
+                {schools.filter(s => s.is_active).length}
+              </p>
             </div>
             <div className="p-3 bg-green-100 rounded-full">
               <CheckCircle className="h-6 w-6 text-green-600" />
@@ -677,7 +495,9 @@ const SchoolManagement: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Total Pengguna</p>
-              <p className="text-2xl font-bold text-purple-600">{stats.totalUsers}</p>
+              <p className="text-2xl font-bold text-purple-600">
+                {Object.values(schoolStats).reduce((sum, stat) => sum + stat.total_users, 0)}
+              </p>
             </div>
             <div className="p-3 bg-purple-100 rounded-full">
               <Users className="h-6 w-6 text-purple-600" />
@@ -688,312 +508,218 @@ const SchoolManagement: React.FC = () => {
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Rata-rata User</p>
-              <p className="text-2xl font-bold text-orange-600">{stats.averageUsersPerSchool}</p>
-              <p className="text-xs text-gray-500">per sekolah</p>
+              <p className="text-sm font-medium text-gray-600">Akreditasi A</p>
+              <p className="text-2xl font-bold text-orange-600">
+                {schools.filter(s => s.accreditation === 'A').length}
+              </p>
             </div>
             <div className="p-3 bg-orange-100 rounded-full">
-              <BarChart3 className="h-6 w-6 text-orange-600" />
-            </div>
-          </div>
-        </Card>
-        
-        <Card className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Sekolah Baru</p>
-              <p className="text-2xl font-bold text-indigo-600">{stats.newSchoolsThisMonth}</p>
-              <p className="text-xs text-gray-500">bulan ini</p>
-            </div>
-            <div className="p-3 bg-indigo-100 rounded-full">
-              <TrendingUp className="h-6 w-6 text-indigo-600" />
+              <Calendar className="h-6 w-6 text-orange-600" />
             </div>
           </div>
         </Card>
       </div>
 
-      {/* Search and Filters */}
+      {/* Main Content */}
       <Card>
-        <div className="p-6">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <input
-                  type="text"
-                  placeholder="Cari sekolah berdasarkan nama, alamat, atau kepala sekolah..."
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all duration-200"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
+        {/* Search and Filters */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <input
+                type="text"
+                placeholder="Cari sekolah..."
+                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
+            <select
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+            >
+              <option value={5}>5 per halaman</option>
+              <option value={10}>10 per halaman</option>
+              <option value={25}>25 per halaman</option>
+              <option value={50}>50 per halaman</option>
+            </select>
           </div>
-
-          {/* Advanced Filters */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-              >
-                <option value="">Semua Status</option>
-                <option value="active">Aktif</option>
-                <option value="inactive">Tidak Aktif</option>
-              </select>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Akreditasi</label>
-              <select
-                value={accreditationFilter}
-                onChange={(e) => setAccreditationFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-              >
-                <option value="">Semua Akreditasi</option>
-                <option value="A">A (Sangat Baik)</option>
-                <option value="B">B (Baik)</option>
-                <option value="C">C (Cukup)</option>
-              </select>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Urutkan</label>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-              >
-                <option value="name">Nama</option>
-                <option value="totalUsers">Total Pengguna</option>
-                <option value="totalStudents">Total Siswa</option>
-                <option value="created_at">Tanggal Dibuat</option>
-              </select>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Urutan</label>
-              <select
-                value={sortOrder}
-                onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-              >
-                <option value="asc">A-Z / Terkecil</option>
-                <option value="desc">Z-A / Terbesar</option>
-              </select>
-            </div>
-            
-            <div className="flex items-end">
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  setSearchTerm('');
-                  setStatusFilter('');
-                  setAccreditationFilter('');
-                  setSortBy('name');
-                  setSortOrder('asc');
-                }}
-                className="w-full"
-              >
-                Reset Filter
-              </Button>
-            </div>
+          <div className="text-sm text-gray-500">
+            Menampilkan {startIndex + 1} - {Math.min(startIndex + itemsPerPage, filteredSchools.length)} dari {filteredSchools.length} sekolah
           </div>
-
-          {/* Bulk Actions */}
-          {selectedSchools.size > 0 && (
-            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-blue-900">
-                  {selectedSchools.size} sekolah dipilih
-                </span>
-                <div className="flex gap-2">
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={() => setSelectedSchools(new Set())}
-                  >
-                    Batal Pilih
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="danger"
-                    onClick={() => setShowBulkModal(true)}
-                  >
-                    Hapus Terpilih
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
-      </Card>
 
-      {/* Schools Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredSchools.map((school) => (
-          <Card key={school.id} className="group hover:shadow-xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-1">
-            <div className="p-6">
-              {/* Header */}
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center space-x-3">
-                  <input
-                    type="checkbox"
-                    checked={selectedSchools.has(school.id)}
-                    onChange={() => toggleSchoolSelection(school.id)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  />
-                  <div className="bg-gradient-to-br from-blue-100 to-blue-200 p-3 rounded-xl shadow-md group-hover:shadow-lg transition-all duration-300">
-                    <Building2 className="h-6 w-6 text-blue-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900 group-hover:text-blue-900 transition-colors">{school.name}</h3>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className={`px-2 py-1 text-xs rounded-full font-medium ${
-                        school.status === 'active' 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {school.status === 'active' ? 'Aktif' : 'Tidak Aktif'}
-                      </span>
-                      {school.accreditation && (
-                        <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800 font-medium">
-                          Akreditasi {school.accreditation}
-                        </span>
+        {/* Schools Table */}
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sekolah</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kontak</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kepala Sekolah</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Akreditasi</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statistik</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {paginatedSchools.map((school) => {
+                const stats = schoolStats[school.id];
+                return (
+                  <tr key={school.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-12 w-12">
+                          <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
+                            <Building2 className="h-6 w-6 text-blue-600" />
+                          </div>
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900">{school.name}</div>
+                          <div className="text-sm text-gray-500 flex items-center">
+                            <MapPin className="h-3 w-3 mr-1" />
+                            {school.address}
+                          </div>
+                          <div className="text-xs text-gray-400">NPSN: {school.npsn}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{school.phone}</div>
+                      <div className="text-sm text-gray-500">{school.email}</div>
+                      {school.website && (
+                        <div className="text-xs text-blue-600">{school.website}</div>
                       )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* School Info */}
-              <div className="space-y-3 mb-4">
-                <div className="flex items-start gap-2">
-                  <MapPin className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                  <p className="text-sm text-gray-600 leading-relaxed">{school.address}</p>
-                </div>
-                {school.principal && (
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-gray-400" />
-                    <p className="text-sm text-gray-600">{school.principal}</p>
-                  </div>
-                )}
-                {school.established_year && (
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-gray-400" />
-                    <p className="text-sm text-gray-600">Didirikan {school.established_year}</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Statistics */}
-              <div className="grid grid-cols-3 gap-4 mb-4">
-                <div className="text-center p-3 bg-blue-50 rounded-lg">
-                  <div className="flex items-center justify-center space-x-1 mb-1">
-                    <Users className="h-4 w-4 text-blue-600" />
-                  </div>
-                  <p className="text-lg font-semibold text-blue-900">{school.totalStudents}</p>
-                  <p className="text-xs text-blue-600">Siswa</p>
-                </div>
-                <div className="text-center p-3 bg-green-50 rounded-lg">
-                  <div className="flex items-center justify-center space-x-1 mb-1">
-                    <Users className="h-4 w-4 text-green-600" />
-                  </div>
-                  <p className="text-lg font-semibold text-green-900">{school.totalTeachers}</p>
-                  <p className="text-xs text-green-600">Guru</p>
-                </div>
-                <div className="text-center p-3 bg-purple-50 rounded-lg">
-                  <div className="flex items-center justify-center space-x-1 mb-1">
-                    <Shield className="h-4 w-4 text-purple-600" />
-                  </div>
-                  <p className="text-lg font-semibold text-purple-900">{school.totalAdmins}</p>
-                  <p className="text-xs text-purple-600">Admin</p>
-                </div>
-              </div>
-
-              {/* Contact Info */}
-              {(school.phone || school.email || school.website) && (
-                <div className="space-y-2 mb-4 p-3 bg-gray-50 rounded-lg">
-                  {school.phone && (
-                    <div className="flex items-center gap-2">
-                      <Phone className="h-3 w-3 text-gray-400" />
-                      <span className="text-xs text-gray-600">{school.phone}</span>
-                    </div>
-                  )}
-                  {school.email && (
-                    <div className="flex items-center gap-2">
-                      <Mail className="h-3 w-3 text-gray-400" />
-                      <span className="text-xs text-gray-600">{school.email}</span>
-                    </div>
-                  )}
-                  {school.website && (
-                    <div className="flex items-center gap-2">
-                      <Globe className="h-3 w-3 text-gray-400" />
-                      <span className="text-xs text-gray-600">{school.website}</span>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="flex space-x-2">
-                <Button 
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => openDetailModal(school)}
-                  className="flex-1 flex items-center justify-center gap-1"
-                >
-                  <Eye className="h-3 w-3" />
-                  Detail
-                </Button>
-                <Button 
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => openEditModal(school)}
-                  className="flex-1 flex items-center justify-center gap-1"
-                >
-                  <Edit className="h-3 w-3" />
-                  Edit
-                </Button>
-                <Button 
-                  size="sm"
-                  variant="danger"
-                  onClick={() => openDeleteModal(school)}
-                  className="flex-1 flex items-center justify-center gap-1"
-                >
-                  <Trash2 className="h-3 w-3" />
-                  Hapus
-                </Button>
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
-
-      {filteredSchools.length === 0 && (
-        <div className="text-center py-12">
-          <Building2 className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">Tidak ada sekolah ditemukan</h3>
-          <p className="mt-1 text-sm text-gray-500">
-            {searchTerm || statusFilter || accreditationFilter
-              ? 'Coba ubah filter pencarian Anda.'
-              : 'Mulai dengan menambahkan sekolah baru.'}
-          </p>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{school.principal_name}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        school.accreditation === 'A' ? 'bg-green-100 text-green-800' :
+                        school.accreditation === 'B' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-red-100 text-red-800'
+                      }`}>
+                        Akreditasi {school.accreditation}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {stats && (
+                        <div className="text-xs text-gray-500">
+                          <div>{stats.total_users} pengguna</div>
+                          <div>{stats.total_students} siswa</div>
+                          <div>{stats.total_teachers} guru</div>
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <button
+                        onClick={() => toggleSchoolStatus(school)}
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full transition-colors ${
+                          school.is_active 
+                            ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                            : 'bg-red-100 text-red-800 hover:bg-red-200'
+                        }`}
+                      >
+                        {school.is_active ? 'Aktif' : 'Nonaktif'}
+                      </button>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => openDetailModal(school)}
+                          className="text-blue-600 hover:text-blue-900 flex items-center gap-1"
+                          title="Lihat Detail"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => openEditModal(school)}
+                          className="text-green-600 hover:text-green-900 flex items-center gap-1"
+                          title="Edit"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => openDeleteModal(school)}
+                          className="text-red-600 hover:text-red-900 flex items-center gap-1"
+                          title="Hapus"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
-      )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-700">
+                Halaman {currentPage} dari {totalPages}
+              </span>
+            </div>
+            
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage <= 1}
+                className="p-2 text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+
+              {getPageNumbers().map((page, index) => (
+                <button
+                  key={index}
+                  onClick={() => typeof page === 'number' ? setCurrentPage(page) : undefined}
+                  disabled={page === '...'}
+                  className={`px-3 py-1 text-sm rounded-md ${
+                    page === currentPage
+                      ? 'bg-primary-600 text-white'
+                      : page === '...'
+                      ? 'text-gray-400 cursor-default'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+
+              <button
+                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage >= totalPages}
+                className="p-2 text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+        )}
+      </Card>
 
       {/* Add School Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-medium text-gray-900">Tambah Sekolah Baru</h3>
-              <button onClick={closeModals}>
-                <X className="h-5 w-5 text-gray-400" />
+              <button onClick={closeModals} className="text-gray-400 hover:text-gray-600">
+                <X className="h-5 w-5" />
               </button>
             </div>
+            
             <form onSubmit={(e) => { e.preventDefault(); handleAddSchool(); }} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -1001,122 +727,145 @@ const SchoolManagement: React.FC = () => {
                   <input
                     type="text"
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                      formErrors.name ? 'border-red-300' : 'border-gray-300'
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                      errors.name ? 'border-red-300' : 'border-gray-300'
                     }`}
-                    placeholder="Masukkan nama sekolah"
+                    placeholder="Contoh: SMA Negeri 1 Jakarta"
                   />
-                  {formErrors.name && <p className="mt-1 text-sm text-red-600">{formErrors.name}</p>}
+                  {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
                 </div>
+                
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                  <select
-                    value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value as 'active' | 'inactive' })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="active">Aktif</option>
-                    <option value="inactive">Tidak Aktif</option>
-                  </select>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">NPSN *</label>
+                  <input
+                    type="text"
+                    value={formData.npsn}
+                    onChange={(e) => setFormData(prev => ({ ...prev, npsn: e.target.value }))}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                      errors.npsn ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                    placeholder="8 digit angka"
+                    maxLength={8}
+                  />
+                  {errors.npsn && <p className="mt-1 text-sm text-red-600">{errors.npsn}</p>}
                 </div>
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Alamat *</label>
                 <textarea
-                  rows={3}
                   value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    formErrors.address ? 'border-red-300' : 'border-gray-300'
+                  onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                    errors.address ? 'border-red-300' : 'border-gray-300'
                   }`}
-                  placeholder="Masukkan alamat lengkap sekolah"
+                  placeholder="Alamat lengkap sekolah"
+                  rows={3}
                 />
-                {formErrors.address && <p className="mt-1 text-sm text-red-600">{formErrors.address}</p>}
+                {errors.address && <p className="mt-1 text-sm text-red-600">{errors.address}</p>}
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Kepala Sekolah</label>
-                  <input
-                    type="text"
-                    value={formData.principal}
-                    onChange={(e) => setFormData({ ...formData, principal: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Nama kepala sekolah"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tahun Berdiri</label>
-                  <input
-                    type="number"
-                    value={formData.established_year}
-                    onChange={(e) => setFormData({ ...formData, established_year: parseInt(e.target.value) })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    min="1900"
-                    max={new Date().getFullYear()}
-                  />
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">No. Telepon</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Nomor Telepon *</label>
                   <input
                     type="tel"
                     value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                      formErrors.phone ? 'border-red-300' : 'border-gray-300'
+                    onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                      errors.phone ? 'border-red-300' : 'border-gray-300'
                     }`}
-                    placeholder="+62 21 1234567"
+                    placeholder="021-12345678"
                   />
-                  {formErrors.phone && <p className="mt-1 text-sm text-red-600">{formErrors.phone}</p>}
+                  {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone}</p>}
                 </div>
+                
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
                   <input
                     type="email"
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                      formErrors.email ? 'border-red-300' : 'border-gray-300'
+                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                      errors.email ? 'border-red-300' : 'border-gray-300'
                     }`}
                     placeholder="info@sekolah.sch.id"
                   />
-                  {formErrors.email && <p className="mt-1 text-sm text-red-600">{formErrors.email}</p>}
+                  {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nama Kepala Sekolah *</label>
+                <input
+                  type="text"
+                  value={formData.principal_name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, principal_name: e.target.value }))}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                    errors.principal_name ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                  placeholder="Dr. Ahmad Susanto, M.Pd"
+                />
+                {errors.principal_name && <p className="mt-1 text-sm text-red-600">{errors.principal_name}</p>}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Akreditasi</label>
                   <select
                     value={formData.accreditation}
-                    onChange={(e) => setFormData({ ...formData, accreditation: e.target.value as 'A' | 'B' | 'C' })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    onChange={(e) => setFormData(prev => ({ ...prev, accreditation: e.target.value as 'A' | 'B' | 'C' }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   >
                     <option value="A">A (Sangat Baik)</option>
                     <option value="B">B (Baik)</option>
                     <option value="C">C (Cukup)</option>
                   </select>
                 </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tahun Berdiri</label>
+                  <input
+                    type="number"
+                    value={formData.established_year}
+                    onChange={(e) => setFormData(prev => ({ ...prev, established_year: Number(e.target.value) }))}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                      errors.established_year ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                    min={1900}
+                    max={new Date().getFullYear()}
+                  />
+                  {errors.established_year && <p className="mt-1 text-sm text-red-600">{errors.established_year}</p>}
+                </div>
+                
+                <div className="flex items-center">
+                  <input
+                    id="is_active"
+                    type="checkbox"
+                    checked={formData.is_active}
+                    onChange={(e) => setFormData(prev => ({ ...prev, is_active: e.target.checked }))}
+                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="is_active" className="ml-2 block text-sm text-gray-900">
+                    Status Aktif
+                  </label>
+                </div>
               </div>
-              
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Website (Opsional)</label>
                 <input
-                  type="text"
+                  type="url"
                   value={formData.website}
-                  onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    formErrors.website ? 'border-red-300' : 'border-gray-300'
-                  }`}
+                  onChange={(e) => setFormData(prev => ({ ...prev, website: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   placeholder="www.sekolah.sch.id"
                 />
-                {formErrors.website && <p className="mt-1 text-sm text-red-600">{formErrors.website}</p>}
               </div>
-              
-              <div className="flex justify-end space-x-3 pt-4">
-                <Button type="button" variant="outline" onClick={closeModals}>
+
+              <div className="flex justify-end gap-3 pt-4">
+                <Button type="button" variant="secondary" onClick={closeModals}>
                   Batal
                 </Button>
                 <Button type="submit" disabled={loading}>
@@ -1130,185 +879,166 @@ const SchoolManagement: React.FC = () => {
 
       {/* Edit School Modal */}
       {showEditModal && selectedSchool && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-medium text-gray-900">Edit Sekolah</h3>
-              <button onClick={closeModals}>
-                <X className="h-5 w-5 text-gray-400" />
+              <button onClick={closeModals} className="text-gray-400 hover:text-gray-600">
+                <X className="h-5 w-5" />
               </button>
             </div>
+            
             <form onSubmit={(e) => { e.preventDefault(); handleEditSchool(); }} className="space-y-4">
+              {/* Same form fields as Add Modal */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Nama Sekolah *</label>
                   <input
                     type="text"
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                      formErrors.name ? 'border-red-300' : 'border-gray-300'
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                      errors.name ? 'border-red-300' : 'border-gray-300'
                     }`}
-                    placeholder="Masukkan nama sekolah"
+                    placeholder="Contoh: SMA Negeri 1 Jakarta"
                   />
-                  {formErrors.name && <p className="mt-1 text-sm text-red-600">{formErrors.name}</p>}
+                  {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
                 </div>
+                
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                  <select
-                    value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value as 'active' | 'inactive' })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="active">Aktif</option>
-                    <option value="inactive">Tidak Aktif</option>
-                  </select>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">NPSN *</label>
+                  <input
+                    type="text"
+                    value={formData.npsn}
+                    onChange={(e) => setFormData(prev => ({ ...prev, npsn: e.target.value }))}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                      errors.npsn ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                    placeholder="8 digit angka"
+                    maxLength={8}
+                  />
+                  {errors.npsn && <p className="mt-1 text-sm text-red-600">{errors.npsn}</p>}
                 </div>
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Alamat *</label>
                 <textarea
-                  rows={3}
                   value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    formErrors.address ? 'border-red-300' : 'border-gray-300'
+                  onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                    errors.address ? 'border-red-300' : 'border-gray-300'
                   }`}
-                  placeholder="Masukkan alamat lengkap sekolah"
+                  placeholder="Alamat lengkap sekolah"
+                  rows={3}
                 />
-                {formErrors.address && <p className="mt-1 text-sm text-red-600">{formErrors.address}</p>}
+                {errors.address && <p className="mt-1 text-sm text-red-600">{errors.address}</p>}
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Kepala Sekolah</label>
-                  <input
-                    type="text"
-                    value={formData.principal}
-                    onChange={(e) => setFormData({ ...formData, principal: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Nama kepala sekolah"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tahun Berdiri</label>
-                  <input
-                    type="number"
-                    value={formData.established_year}
-                    onChange={(e) => setFormData({ ...formData, established_year: parseInt(e.target.value) })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    min="1900"
-                    max={new Date().getFullYear()}
-                  />
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">No. Telepon</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Nomor Telepon *</label>
                   <input
                     type="tel"
                     value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                      formErrors.phone ? 'border-red-300' : 'border-gray-300'
+                    onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                      errors.phone ? 'border-red-300' : 'border-gray-300'
                     }`}
-                    placeholder="+62 21 1234567"
+                    placeholder="021-12345678"
                   />
-                  {formErrors.phone && <p className="mt-1 text-sm text-red-600">{formErrors.phone}</p>}
+                  {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone}</p>}
                 </div>
+                
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
                   <input
                     type="email"
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                      formErrors.email ? 'border-red-300' : 'border-gray-300'
+                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                      errors.email ? 'border-red-300' : 'border-gray-300'
                     }`}
                     placeholder="info@sekolah.sch.id"
                   />
-                  {formErrors.email && <p className="mt-1 text-sm text-red-600">{formErrors.email}</p>}
+                  {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nama Kepala Sekolah *</label>
+                <input
+                  type="text"
+                  value={formData.principal_name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, principal_name: e.target.value }))}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                    errors.principal_name ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                  placeholder="Dr. Ahmad Susanto, M.Pd"
+                />
+                {errors.principal_name && <p className="mt-1 text-sm text-red-600">{errors.principal_name}</p>}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Akreditasi</label>
                   <select
                     value={formData.accreditation}
-                    onChange={(e) => setFormData({ ...formData, accreditation: e.target.value as 'A' | 'B' | 'C' })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    onChange={(e) => setFormData(prev => ({ ...prev, accreditation: e.target.value as 'A' | 'B' | 'C' }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   >
                     <option value="A">A (Sangat Baik)</option>
                     <option value="B">B (Baik)</option>
                     <option value="C">C (Cukup)</option>
                   </select>
                 </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tahun Berdiri</label>
+                  <input
+                    type="number"
+                    value={formData.established_year}
+                    onChange={(e) => setFormData(prev => ({ ...prev, established_year: Number(e.target.value) }))}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                      errors.established_year ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                    min={1900}
+                    max={new Date().getFullYear()}
+                  />
+                  {errors.established_year && <p className="mt-1 text-sm text-red-600">{errors.established_year}</p>}
+                </div>
+                
+                <div className="flex items-center">
+                  <input
+                    id="edit_is_active"
+                    type="checkbox"
+                    checked={formData.is_active}
+                    onChange={(e) => setFormData(prev => ({ ...prev, is_active: e.target.checked }))}
+                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="edit_is_active" className="ml-2 block text-sm text-gray-900">
+                    Status Aktif
+                  </label>
+                </div>
               </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value as 'active' | 'inactive' })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="active">Aktif</option>
-                  <option value="inactive">Tidak Aktif</option>
-                </select>
-              </div>
-              <div className="flex space-x-3 pt-4">
-                <button
-                  onClick={closeAddModal}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-                >
-                  Batal
-                </button>
-                <button
-                  onClick={handleAddSchool}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center space-x-2"
-                >
-                  <Save className="h-4 w-4" />
-                  <span>Simpan</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* Edit School Modal */}
-      {showEditModal && selectedSchool && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" style={{marginTop: 'unset'}}>
-          <div className="bg-white rounded-lg p-6 w-full max-w-md" style={{marginTop: 'unset'}}>
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium text-gray-900">Edit Sekolah</h3>
-              <button onClick={closeEditModal}>
-                <X className="h-5 w-5 text-gray-400" />
-              </button>
-            </div>
-            <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nama Sekolah</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Website (Opsional)</label>
                 <input
-                  type="text"
+                  type="url"
                   value={formData.website}
-                  onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    formErrors.website ? 'border-red-300' : 'border-gray-300'
-                  }`}
+                  onChange={(e) => setFormData(prev => ({ ...prev, website: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   placeholder="www.sekolah.sch.id"
                 />
-                {formErrors.website && <p className="mt-1 text-sm text-red-600">{formErrors.website}</p>}
               </div>
-              
-              <div className="flex justify-end space-x-3 pt-4">
-                <Button type="button" variant="outline" onClick={closeModals}>
+
+              <div className="flex justify-end gap-3 pt-4">
+                <Button type="button" variant="secondary" onClick={closeModals}>
                   Batal
                 </Button>
                 <Button type="submit" disabled={loading}>
-                  {loading ? 'Menyimpan...' : 'Simpan Perubahan'}
+                  {loading ? 'Menyimpan...' : 'Update Sekolah'}
                 </Button>
               </div>
             </form>
@@ -1316,196 +1046,49 @@ const SchoolManagement: React.FC = () => {
         </div>
       )}
 
-      {/* Detail Modal */}
-      {showDetailModal && selectedSchool && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-medium text-gray-900">Detail Sekolah</h3>
-              <button onClick={closeModals}>
-                <X className="h-5 w-5 text-gray-400" />
-              </button>
-            </div>
-            
-            <div className="space-y-6">
-              {/* Basic Info */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-3">Informasi Dasar</h4>
-                  <div className="space-y-3">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Nama Sekolah</label>
-                      <p className="mt-1 text-sm text-gray-900">{selectedSchool.name}</p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Alamat</label>
-                      <p className="mt-1 text-sm text-gray-900">{selectedSchool.address}</p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Status</label>
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mt-1 ${
-                        (selectedSchool as ExtendedSchool).status === 'active' 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {(selectedSchool as ExtendedSchool).status === 'active' ? 'Aktif' : 'Tidak Aktif'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-3">Statistik</h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="text-center p-3 bg-blue-50 rounded-lg">
-                      <p className="text-2xl font-bold text-blue-600">{(selectedSchool as ExtendedSchool).totalStudents}</p>
-                      <p className="text-xs text-blue-600">Siswa</p>
-                    </div>
-                    <div className="text-center p-3 bg-green-50 rounded-lg">
-                      <p className="text-2xl font-bold text-green-600">{(selectedSchool as ExtendedSchool).totalTeachers}</p>
-                      <p className="text-xs text-green-600">Guru</p>
-                    </div>
-                    <div className="text-center p-3 bg-purple-50 rounded-lg">
-                      <p className="text-2xl font-bold text-purple-600">{(selectedSchool as ExtendedSchool).totalAdmins}</p>
-                      <p className="text-xs text-purple-600">Admin</p>
-                    </div>
-                    <div className="text-center p-3 bg-orange-50 rounded-lg">
-                      <p className="text-2xl font-bold text-orange-600">{(selectedSchool as ExtendedSchool).totalUsers}</p>
-                      <p className="text-xs text-orange-600">Total User</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Contact & Additional Info */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-3">Kontak</h4>
-                  <div className="space-y-3">
-                    {(selectedSchool as ExtendedSchool).phone && (
-                      <div className="flex items-center gap-2">
-                        <Phone className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm text-gray-900">{(selectedSchool as ExtendedSchool).phone}</span>
-                      </div>
-                    )}
-                    {(selectedSchool as ExtendedSchool).email && (
-                      <div className="flex items-center gap-2">
-                        <Mail className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm text-gray-900">{(selectedSchool as ExtendedSchool).email}</span>
-                      </div>
-                    )}
-                    {(selectedSchool as ExtendedSchool).website && (
-                      <div className="flex items-center gap-2">
-                        <Globe className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm text-gray-900">{(selectedSchool as ExtendedSchool).website}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-3">Informasi Tambahan</h4>
-                  <div className="space-y-3">
-                    {(selectedSchool as ExtendedSchool).principal && (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">Kepala Sekolah</label>
-                        <p className="mt-1 text-sm text-gray-900">{(selectedSchool as ExtendedSchool).principal}</p>
-                      </div>
-                    )}
-                    {(selectedSchool as ExtendedSchool).established_year && (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">Tahun Berdiri</label>
-                        <p className="mt-1 text-sm text-gray-900">{(selectedSchool as ExtendedSchool).established_year}</p>
-                      </div>
-                    )}
-                    {(selectedSchool as ExtendedSchool).accreditation && (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">Akreditasi</label>
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mt-1">
-                          {(selectedSchool as ExtendedSchool).accreditation} 
-                          {(selectedSchool as ExtendedSchool).accreditation === 'A' && ' (Sangat Baik)'}
-                          {(selectedSchool as ExtendedSchool).accreditation === 'B' && ' (Baik)'}
-                          {(selectedSchool as ExtendedSchool).accreditation === 'C' && ' (Cukup)'}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-              
-              {/* System Info */}
-              <div>
-                <h4 className="font-medium text-gray-900 mb-3">Informasi Sistem</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Tanggal Bergabung</label>
-                    <p className="mt-1 text-sm text-gray-900">
-                      {new Date(selectedSchool.created_at).toLocaleDateString('id-ID', {
-                        weekday: 'long',
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      })}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Terakhir Diperbarui</label>
-                    <p className="mt-1 text-sm text-gray-900">
-                      {selectedSchool.updated_at ? new Date(selectedSchool.updated_at).toLocaleDateString('id-ID', {
-                        weekday: 'long',
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      }) : '-'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex justify-end gap-3 pt-6">
-              <Button variant="outline" onClick={closeModals}>
-                Tutup
-              </Button>
-              <Button onClick={() => {
-                closeModals();
-                openEditModal(selectedSchool as ExtendedSchool);
-              }}>
-                Edit Sekolah
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Delete Confirmation Modal */}
       {showDeleteModal && selectedSchool && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-medium text-gray-900">Konfirmasi Hapus</h3>
-              <button onClick={closeModals}>
-                <X className="h-5 w-5 text-gray-400" />
+              <button onClick={closeModals} className="text-gray-400 hover:text-gray-600">
+                <X className="h-5 w-5" />
               </button>
             </div>
+            
             <div className="mb-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-3 bg-red-100 rounded-full">
+                  <AlertCircle className="h-6 w-6 text-red-600" />
+                </div>
+                <div>
+                  <h4 className="font-medium text-gray-900">Hapus Sekolah</h4>
+                  <p className="text-sm text-gray-600">Tindakan ini tidak dapat dibatalkan</p>
+                </div>
+              </div>
+              
               <p className="text-sm text-gray-600">
                 Apakah Anda yakin ingin menghapus sekolah <strong>{selectedSchool.name}</strong>?
               </p>
-              <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-sm text-red-800 font-medium">Peringatan:</p>
-                <ul className="text-sm text-red-700 mt-1 space-y-1">
-                  <li>• Semua data pengguna sekolah akan dihapus</li>
-                  <li>• Semua data akademik akan hilang</li>
-                  <li>• Tindakan ini tidak dapat dibatalkan</li>
-                </ul>
+              
+              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-sm text-yellow-800">
+                  <strong>Peringatan:</strong> Menghapus sekolah akan menghapus semua data terkait termasuk pengguna, kelas, dan materi pembelajaran.
+                </p>
               </div>
             </div>
-            <div className="flex space-x-3">
-              <Button variant="outline" onClick={closeModals} className="flex-1">
+            
+            <div className="flex justify-end gap-3">
+              <Button type="button" variant="secondary" onClick={closeModals}>
                 Batal
               </Button>
-              <Button variant="danger" onClick={handleDeleteSchool} disabled={loading} className="flex-1">
+              <Button 
+                type="button" 
+                variant="danger" 
+                onClick={handleDeleteSchool}
+                disabled={loading}
+              >
                 {loading ? 'Menghapus...' : 'Hapus Sekolah'}
               </Button>
             </div>
@@ -1513,123 +1096,173 @@ const SchoolManagement: React.FC = () => {
         </div>
       )}
 
-      {/* Bulk Delete Modal */}
-      {showBulkModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium text-gray-900">Konfirmasi Hapus Massal</h3>
-              <button onClick={closeModals}>
-                <X className="h-5 w-5 text-gray-400" />
+      {/* School Detail Modal */}
+      {showDetailModal && selectedSchool && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-medium text-gray-900">Detail Sekolah</h3>
+              <button onClick={closeModals} className="text-gray-400 hover:text-gray-600">
+                <X className="h-5 w-5" />
               </button>
             </div>
-            <div className="mb-6">
-              <p className="text-sm text-gray-600">
-                Apakah Anda yakin ingin menghapus <strong>{selectedSchools.size}</strong> sekolah yang dipilih?
-              </p>
-              <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-sm text-red-800 font-medium">Peringatan:</p>
-                <ul className="text-sm text-red-700 mt-1 space-y-1">
-                  <li>• Semua data pengguna dari sekolah-sekolah ini akan dihapus</li>
-                  <li>• Semua data akademik akan hilang</li>
-                  <li>• Tindakan ini tidak dapat dibatalkan</li>
-                </ul>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* School Information */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <div className="p-4 bg-blue-100 rounded-full">
+                    <Building2 className="h-8 w-8 text-blue-600" />
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-semibold text-gray-900">{selectedSchool.name}</h4>
+                    <p className="text-sm text-gray-600">NPSN: {selectedSchool.npsn}</p>
+                  </div>
+                </div>
+                
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Alamat</label>
+                    <p className="text-sm text-gray-900">{selectedSchool.address}</p>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Telepon</label>
+                      <p className="text-sm text-gray-900">{selectedSchool.phone}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Email</label>
+                      <p className="text-sm text-gray-900">{selectedSchool.email}</p>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Kepala Sekolah</label>
+                    <p className="text-sm text-gray-900">{selectedSchool.principal_name}</p>
+                  </div>
+                  
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Akreditasi</label>
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        selectedSchool.accreditation === 'A' ? 'bg-green-100 text-green-800' :
+                        selectedSchool.accreditation === 'B' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-red-100 text-red-800'
+                      }`}>
+                        {selectedSchool.accreditation}
+                      </span>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Tahun Berdiri</label>
+                      <p className="text-sm text-gray-900">{selectedSchool.established_year}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Status</label>
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        selectedSchool.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      }`}>
+                        {selectedSchool.is_active ? 'Aktif' : 'Nonaktif'}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {selectedSchool.website && (
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Website</label>
+                      <a 
+                        href={`https://${selectedSchool.website}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-600 hover:text-blue-800"
+                      >
+                        {selectedSchool.website}
+                      </a>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-            <div className="flex space-x-3">
-              <Button variant="outline" onClick={closeModals} className="flex-1">
-                Batal
-              </Button>
-              <Button variant="danger" onClick={handleBulkDelete} disabled={loading} className="flex-1">
-                {loading ? 'Menghapus...' : `Hapus ${selectedSchools.size} Sekolah`}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-export default SchoolManagement;
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Alamat</label>
-                <textarea
-                  rows={3}
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    errors.address ? 'border-red-300' : 'border-gray-300'
-                  }`}
-                  placeholder="Masukkan alamat sekolah"
-                />
-                {errors.address && (
-                  <p className="mt-1 text-sm text-red-600">{errors.address}</p>
+              
+              {/* School Statistics */}
+              <div className="space-y-4">
+                <h4 className="text-lg font-semibold text-gray-900">Statistik Sekolah</h4>
+                
+                {schoolStats[selectedSchool.id] && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-blue-50 p-4 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <Users className="h-5 w-5 text-blue-600" />
+                        <span className="text-sm font-medium text-blue-900">Total Pengguna</span>
+                      </div>
+                      <p className="text-2xl font-bold text-blue-600 mt-2">
+                        {schoolStats[selectedSchool.id].total_users}
+                      </p>
+                    </div>
+                    
+                    <div className="bg-green-50 p-4 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <Users className="h-5 w-5 text-green-600" />
+                        <span className="text-sm font-medium text-green-900">Total Siswa</span>
+                      </div>
+                      <p className="text-2xl font-bold text-green-600 mt-2">
+                        {schoolStats[selectedSchool.id].total_students}
+                      </p>
+                    </div>
+                    
+                    <div className="bg-purple-50 p-4 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <Users className="h-5 w-5 text-purple-600" />
+                        <span className="text-sm font-medium text-purple-900">Total Guru</span>
+                      </div>
+                      <p className="text-2xl font-bold text-purple-600 mt-2">
+                        {schoolStats[selectedSchool.id].total_teachers}
+                      </p>
+                    </div>
+                    
+                    <div className="bg-orange-50 p-4 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-5 w-5 text-orange-600" />
+                        <span className="text-sm font-medium text-orange-900">Total Kelas</span>
+                      </div>
+                      <p className="text-2xl font-bold text-orange-600 mt-2">
+                        {schoolStats[selectedSchool.id].total_classes}
+                      </p>
+                    </div>
+                  </div>
                 )}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value as 'active' | 'inactive' })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="active">Aktif</option>
-                  <option value="inactive">Tidak Aktif</option>
-                </select>
-              </div>
-              <div className="flex space-x-3 pt-4">
-                <button
-                  onClick={closeEditModal}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-                >
-                  Batal
-                </button>
-                <button
-                  onClick={handleEditSchool}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center space-x-2"
-                >
-                  <Save className="h-4 w-4" />
-                  <span>Simpan</span>
-                </button>
+                
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h5 className="font-medium text-gray-900 mb-2">Informasi Tambahan</h5>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Terdaftar:</span>
+                      <span className="text-gray-900">{formatDate(selectedSchool.created_at)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Terakhir Diperbarui:</span>
+                      <span className="text-gray-900">{formatDate(selectedSchool.updated_at || selectedSchool.created_at)}</span>
+                    </div>
+                    {schoolStats[selectedSchool.id] && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Aktivitas Terakhir:</span>
+                        <span className="text-gray-900">{formatTimeAgo(schoolStats[selectedSchool.id].last_activity)}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Confirmation Modal */}
-      {showDeleteModal && selectedSchool && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" style={{marginTop: 'unset'}}>
-          <div className="bg-white rounded-lg p-6 w-full max-w-md" style={{marginTop: 'unset'}}>
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium text-gray-900">Konfirmasi Hapus</h3>
-              <button onClick={() => setShowDeleteModal(false)}>
-                <X className="h-5 w-5 text-gray-400" />
-              </button>
-            </div>
-            <div className="mb-6">
-              <p className="text-sm text-gray-600">
-                Apakah Anda yakin ingin menghapus sekolah <strong>{selectedSchool.name}</strong>?
-              </p>
-              <p className="text-sm text-red-600 mt-2">
-                Tindakan ini tidak dapat dibatalkan dan akan menghapus semua data terkait.
-              </p>
-            </div>
-            <div className="flex space-x-3">
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-              >
-                Batal
-              </button>
-              <button
-                onClick={handleDeleteSchool}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center justify-center space-x-2"
-              >
-                <Trash2 className="h-4 w-4" />
-                <span>Hapus</span>
-              </button>
+            
+            <div className="flex justify-end gap-3 pt-6">
+              <Button type="button" variant="secondary" onClick={closeModals}>
+                Tutup
+              </Button>
+              <Button type="button" onClick={() => {
+                closeModals();
+                openEditModal(selectedSchool);
+              }}>
+                Edit Sekolah
+              </Button>
             </div>
           </div>
         </div>

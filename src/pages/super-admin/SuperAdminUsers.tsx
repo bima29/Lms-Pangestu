@@ -1,157 +1,102 @@
 import React, { useState, useEffect } from 'react';
 import { 
+  Users, 
+  Plus, 
   Edit, 
   Trash2, 
-  Plus, 
   Search, 
-  User, 
-  Users, 
-  Eye, 
-  EyeOff, 
-  X, 
-  ChevronLeft, 
-  ChevronRight,
-  Building2,
   Filter,
-  Download,
-  Upload,
-  RefreshCw
+  Eye,
+  EyeOff,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  User,
+  Mail,
+  Phone,
+  Building2,
+  Shield,
+  CheckCircle,
+  AlertCircle
 } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
-import { User as UserType, PaginationParams, PaginationResult, School } from '../../types';
-import { mockUsers, mockSchools } from '../../data/mockData';
-import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
+import Button from '../../components/ui/Button';
+import { User as UserType, School } from '../../types';
+import { mockUsers, mockSchools } from '../../data/mockData';
 
 interface UserFormData {
   name: string;
   email: string;
   password: string;
   role: 'super_admin' | 'school_admin' | 'teacher' | 'student' | 'parent';
+  school_id: string;
   phone: string;
-  school_id?: string;
   is_active: boolean;
 }
 
 interface UserStats {
-  totalUsers: number;
-  activeUsers: number;
-  usersByRole: Record<string, number>;
-  usersBySchool: Record<string, number>;
-  newUsersThisMonth: number;
+  total_users: number;
+  active_users: number;
+  users_by_role: Record<string, number>;
+  users_by_school: Record<string, number>;
+  recent_registrations: number;
 }
 
 const SuperAdminUsers: React.FC = () => {
-  const { user } = useAuth();
+  const [users, setUsers] = useState<UserType[]>([]);
+  const [schools, setSchools] = useState<School[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [schoolFilter, setSchoolFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   
   // Modal states
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showBulkModal, setShowBulkModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserType | null>(null);
-  const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [showPassword, setShowPassword] = useState(false);
   
   // Form state
-  const [form, setForm] = useState<UserFormData>({
+  const [formData, setFormData] = useState<UserFormData>({
     name: '',
     email: '',
     password: '',
     role: 'student',
+    school_id: '',
     phone: '',
     is_active: true
   });
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-
-  // Data states
-  const [users, setUsers] = useState<UserType[]>([]);
-  const [schools, setSchools] = useState<School[]>([]);
-  const [stats, setStats] = useState<UserStats>({
-    totalUsers: 0,
-    activeUsers: 0,
-    usersByRole: {},
-    usersBySchool: {},
-    newUsersThisMonth: 0
+  
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [userStats, setUserStats] = useState<UserStats>({
+    total_users: 0,
+    active_users: 0,
+    users_by_role: {},
+    users_by_school: {},
+    recent_registrations: 0
   });
-
-  // Pagination state
-  const defaultPage: PaginationParams = { page: 1, limit: 10, search: '' };
-  const [pagination, setPagination] = useState<PaginationParams>(defaultPage);
-  const [result, setResult] = useState<PaginationResult<UserType>>({ 
-    data: [], 
-    total: 0, 
-    page: 1, 
-    limit: 10, 
-    total_pages: 0 
-  });
-
-  // Role options for the form
-  const roleOptions = [
-    { value: 'super_admin', label: 'Super Admin' },
-    { value: 'school_admin', label: 'Admin Sekolah' },
-    { value: 'teacher', label: 'Guru' },
-    { value: 'student', label: 'Siswa' },
-    { value: 'parent', label: 'Orang Tua' }
-  ];
 
   // Load initial data
   useEffect(() => {
     loadUsers();
     loadSchools();
+  }, []);
+
+  useEffect(() => {
     calculateStats();
-  }, [pagination, roleFilter, schoolFilter, statusFilter]);
+  }, [users]);
 
   const loadUsers = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      
-      // Simulate API call with mock data
-      let filteredUsers = [...mockUsers];
-      
-      // Apply filters
-      if (pagination.search) {
-        const searchLower = pagination.search.toLowerCase();
-        filteredUsers = filteredUsers.filter(u => 
-          u.name.toLowerCase().includes(searchLower) ||
-          u.email.toLowerCase().includes(searchLower) ||
-          (u.phone && u.phone.includes(searchLower))
-        );
-      }
-      
-      if (roleFilter !== 'all') {
-        filteredUsers = filteredUsers.filter(u => u.role === roleFilter);
-      }
-      
-      if (schoolFilter !== 'all') {
-        filteredUsers = filteredUsers.filter(u => u.school_id === schoolFilter);
-      }
-      
-      if (statusFilter !== 'all') {
-        const isActive = statusFilter === 'active';
-        filteredUsers = filteredUsers.filter(u => u.is_active === isActive);
-      }
-
-      // Pagination
-      const total = filteredUsers.length;
-      const startIndex = (pagination.page - 1) * pagination.limit;
-      const endIndex = startIndex + pagination.limit;
-      const paginatedData = filteredUsers.slice(startIndex, endIndex);
-
-      setResult({
-        data: paginatedData,
-        total,
-        page: pagination.page,
-        limit: pagination.limit,
-        total_pages: Math.ceil(total / pagination.limit)
-      });
-
-      setUsers(filteredUsers);
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 800));
+      setUsers(mockUsers);
     } catch (error) {
       console.error('Error loading users:', error);
     } finally {
@@ -159,137 +104,116 @@ const SuperAdminUsers: React.FC = () => {
     }
   };
 
-  const loadSchools = () => {
-    setSchools(mockSchools);
+  const loadSchools = async () => {
+    try {
+      setSchools(mockSchools);
+    } catch (error) {
+      console.error('Error loading schools:', error);
+    }
   };
 
   const calculateStats = () => {
-    const totalUsers = mockUsers.length;
-    const activeUsers = mockUsers.filter(u => u.is_active).length;
-    
-    const usersByRole = mockUsers.reduce((acc, user) => {
-      acc[user.role] = (acc[user.role] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const stats: UserStats = {
+      total_users: users.length,
+      active_users: users.filter(u => u.is_active).length,
+      users_by_role: {},
+      users_by_school: {},
+      recent_registrations: users.filter(u => {
+        const createdDate = new Date(u.created_at);
+        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        return createdDate >= thirtyDaysAgo;
+      }).length
+    };
 
-    const usersBySchool = mockUsers.reduce((acc, user) => {
-      if (user.school_id) {
-        const school = mockSchools.find(s => s.id === user.school_id);
-        const schoolName = school?.name || 'Unknown School';
-        acc[schoolName] = (acc[schoolName] || 0) + 1;
-      }
-      return acc;
-    }, {} as Record<string, number>);
-
-    // Simulate new users this month
-    const newUsersThisMonth = Math.floor(totalUsers * 0.1);
-
-    setStats({
-      totalUsers,
-      activeUsers,
-      usersByRole,
-      usersBySchool,
-      newUsersThisMonth
+    // Calculate users by role
+    users.forEach(user => {
+      stats.users_by_role[user.role] = (stats.users_by_role[user.role] || 0) + 1;
     });
+
+    // Calculate users by school
+    users.forEach(user => {
+      if (user.school_id) {
+        const school = schools.find(s => s.id === user.school_id);
+        const schoolName = school?.name || 'Unknown School';
+        stats.users_by_school[schoolName] = (stats.users_by_school[schoolName] || 0) + 1;
+      } else {
+        stats.users_by_school['No School'] = (stats.users_by_school['No School'] || 0) + 1;
+      }
+    });
+
+    setUserStats(stats);
   };
 
   // Form validation
   const validateForm = (): boolean => {
-    const errors: Record<string, string> = {};
+    const newErrors: Record<string, string> = {};
 
-    if (!form.name.trim()) {
-      errors.name = 'Nama wajib diisi';
-    } else if (form.name.trim().length < 2) {
-      errors.name = 'Nama minimal 2 karakter';
+    if (!formData.name.trim()) {
+      newErrors.name = 'Nama wajib diisi';
     }
 
-    if (!form.email.trim()) {
-      errors.email = 'Email wajib diisi';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-      errors.email = 'Format email tidak valid';
-    } else {
-      // Check for duplicate email
-      const isDuplicate = mockUsers.some(u => 
-        u.email.toLowerCase() === form.email.toLowerCase() && 
-        u.id !== selectedUser?.id
-      );
-      if (isDuplicate) {
-        errors.email = 'Email sudah digunakan';
-      }
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email wajib diisi';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Format email tidak valid';
     }
 
-    if (!selectedUser && !form.password.trim()) {
-      errors.password = 'Password wajib diisi';
-    } else if (form.password && form.password.length < 6) {
-      errors.password = 'Password minimal 6 karakter';
+    // Check for duplicate email
+    const existingUser = users.find(u => 
+      u.email === formData.email && u.id !== selectedUser?.id
+    );
+    if (existingUser) {
+      newErrors.email = 'Email sudah digunakan';
     }
 
-    if (form.phone && !/^[\d\-\+\(\)\s]+$/.test(form.phone)) {
-      errors.phone = 'Format nomor telepon tidak valid';
+    if (!selectedUser && !formData.password.trim()) {
+      newErrors.password = 'Password wajib diisi untuk pengguna baru';
+    } else if (formData.password && formData.password.length < 6) {
+      newErrors.password = 'Password minimal 6 karakter';
     }
 
-    if ((form.role === 'school_admin' || form.role === 'teacher' || form.role === 'student' || form.role === 'parent') && !form.school_id) {
-      errors.school_id = 'Sekolah wajib dipilih untuk role ini';
+    if (formData.role !== 'super_admin' && !formData.school_id) {
+      newErrors.school_id = 'Sekolah wajib dipilih untuk role ini';
     }
 
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
+    if (formData.phone && !/^[0-9\-\+\(\)\s]+$/.test(formData.phone)) {
+      newErrors.phone = 'Format nomor telepon tidak valid';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   // Modal handlers
   const openAddModal = () => {
-    setForm({
+    setFormData({
       name: '',
       email: '',
       password: '',
       role: 'student',
+      school_id: '',
       phone: '',
       is_active: true
     });
-    setFormErrors({});
+    setErrors({});
+    setShowPassword(false);
     setShowAddModal(true);
-  };
-
-  const closeAddModal = () => {
-    setShowAddModal(false);
-    setForm({
-      name: '',
-      email: '',
-      password: '',
-      role: 'student',
-      phone: '',
-      is_active: true
-    });
-    setFormErrors({});
   };
 
   const openEditModal = (user: UserType) => {
     setSelectedUser(user);
-    setForm({
+    setFormData({
       name: user.name,
       email: user.email,
       password: '',
-      role: user.role as UserFormData['role'],
+      role: user.role,
+      school_id: user.school_id || '',
       phone: user.phone || '',
-      school_id: user.school_id,
       is_active: user.is_active
     });
-    setFormErrors({});
+    setErrors({});
+    setShowPassword(false);
     setShowEditModal(true);
-  };
-
-  const closeEditModal = () => {
-    setShowEditModal(false);
-    setSelectedUser(null);
-    setForm({
-      name: '',
-      email: '',
-      password: '',
-      role: 'student',
-      phone: '',
-      is_active: true
-    });
-    setFormErrors({});
   };
 
   const openDeleteModal = (user: UserType) => {
@@ -297,13 +221,23 @@ const SuperAdminUsers: React.FC = () => {
     setShowDeleteModal(true);
   };
 
-  const closeDeleteModal = () => {
+  const openDetailModal = (user: UserType) => {
+    setSelectedUser(user);
+    setShowDetailModal(true);
+  };
+
+  const closeModals = () => {
+    setShowAddModal(false);
+    setShowEditModal(false);
     setShowDeleteModal(false);
+    setShowDetailModal(false);
     setSelectedUser(null);
+    setErrors({});
+    setShowPassword(false);
   };
 
   // CRUD operations
-  const handleAdd = async () => {
+  const handleAddUser = async () => {
     if (!validateForm()) return;
 
     try {
@@ -311,20 +245,21 @@ const SuperAdminUsers: React.FC = () => {
       
       const newUser: UserType = {
         id: `user-${Date.now()}`,
-        ...form,
+        name: formData.name,
+        email: formData.email,
+        role: formData.role,
+        school_id: formData.school_id || undefined,
+        phone: formData.phone || undefined,
+        is_active: formData.is_active,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
-      
+
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Add to mock data
-      mockUsers.unshift(newUser);
-      
-      closeAddModal();
-      loadUsers();
-      calculateStats();
+      setUsers(prev => [newUser, ...prev]);
+      closeModals();
     } catch (error) {
       console.error('Error adding user:', error);
     } finally {
@@ -332,28 +267,31 @@ const SuperAdminUsers: React.FC = () => {
     }
   };
 
-  const handleEdit = async () => {
-    if (!selectedUser || !validateForm()) return;
-    
+  const handleEditUser = async () => {
+    if (!validateForm() || !selectedUser) return;
+
     try {
       setLoading(true);
       
+      const updatedUser: UserType = {
+        ...selectedUser,
+        name: formData.name,
+        email: formData.email,
+        role: formData.role,
+        school_id: formData.school_id || undefined,
+        phone: formData.phone || undefined,
+        is_active: formData.is_active,
+        updated_at: new Date().toISOString()
+      };
+
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Update mock data
-      const userIndex = mockUsers.findIndex(u => u.id === selectedUser.id);
-      if (userIndex !== -1) {
-        mockUsers[userIndex] = {
-          ...mockUsers[userIndex],
-          ...form,
-          updated_at: new Date().toISOString()
-        };
-      }
+      setUsers(prev => prev.map(user => 
+        user.id === selectedUser.id ? updatedUser : user
+      ));
       
-      closeEditModal();
-      loadUsers();
-      calculateStats();
+      closeModals();
     } catch (error) {
       console.error('Error updating user:', error);
     } finally {
@@ -361,24 +299,17 @@ const SuperAdminUsers: React.FC = () => {
     }
   };
 
-  const handleDelete = async () => {
+  const handleDeleteUser = async () => {
     if (!selectedUser) return;
-    
+
     try {
       setLoading(true);
       
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Remove from mock data
-      const userIndex = mockUsers.findIndex(u => u.id === selectedUser.id);
-      if (userIndex !== -1) {
-        mockUsers.splice(userIndex, 1);
-      }
-      
-      closeDeleteModal();
-      loadUsers();
-      calculateStats();
+      setUsers(prev => prev.filter(user => user.id !== selectedUser.id));
+      closeModals();
     } catch (error) {
       console.error('Error deleting user:', error);
     } finally {
@@ -386,107 +317,45 @@ const SuperAdminUsers: React.FC = () => {
     }
   };
 
-  const handleBulkDelete = async () => {
-    if (selectedUsers.size === 0) return;
-    
+  const toggleUserStatus = async (user: UserType) => {
     try {
-      setLoading(true);
-      
+      const updatedUser = {
+        ...user,
+        is_active: !user.is_active,
+        updated_at: new Date().toISOString()
+      };
+
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 300));
       
-      // Remove selected users from mock data
-      selectedUsers.forEach(userId => {
-        const userIndex = mockUsers.findIndex(u => u.id === userId);
-        if (userIndex !== -1) {
-          mockUsers.splice(userIndex, 1);
-        }
-      });
-      
-      setSelectedUsers(new Set());
-      setShowBulkModal(false);
-      loadUsers();
-      calculateStats();
+      setUsers(prev => prev.map(u => 
+        u.id === user.id ? updatedUser : u
+      ));
     } catch (error) {
-      console.error('Error bulk deleting users:', error);
-    } finally {
-      setLoading(false);
+      console.error('Error toggling user status:', error);
     }
   };
 
-  const toggleUserSelection = (userId: string) => {
-    const newSelected = new Set(selectedUsers);
-    if (newSelected.has(userId)) {
-      newSelected.delete(userId);
-    } else {
-      newSelected.add(userId);
-    }
-    setSelectedUsers(newSelected);
-  };
-
-  const toggleAllUsers = () => {
-    if (selectedUsers.size === result.data.length) {
-      setSelectedUsers(new Set());
-    } else {
-      setSelectedUsers(new Set(result.data.map(u => u.id)));
-    }
-  };
-
-  // Export functionality
-  const exportUsers = (format: 'csv' | 'excel') => {
-    const exportData = users.map(user => ({
-      ID: user.id,
-      Name: user.name,
-      Email: user.email,
-      Role: user.role,
-      Phone: user.phone || '',
-      School: user.school_id ? mockSchools.find(s => s.id === user.school_id)?.name || '' : '',
-      Status: user.is_active ? 'Active' : 'Inactive',
-      'Created At': new Date(user.created_at).toLocaleDateString('id-ID')
-    }));
-
-    // Simulate export
-    console.log(`Exporting ${exportData.length} users as ${format.toUpperCase()}`);
+  // Filtering and pagination
+  const filteredUsers = users.filter(user => {
+    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         user.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesRole = roleFilter === 'all' || user.role === roleFilter;
+    const matchesSchool = schoolFilter === 'all' || user.school_id === schoolFilter;
+    const matchesStatus = statusFilter === 'all' || 
+                         (statusFilter === 'active' && user.is_active) ||
+                         (statusFilter === 'inactive' && !user.is_active);
     
-    // Create and download file
-    const filename = `users_export_${new Date().toISOString().split('T')[0]}.${format}`;
-    const csvContent = format === 'csv' 
-      ? [
-          Object.keys(exportData[0]).join(','),
-          ...exportData.map(row => Object.values(row).join(','))
-        ].join('\n')
-      : JSON.stringify(exportData, null, 2);
-    
-    const blob = new Blob([csvContent], { type: format === 'csv' ? 'text/csv' : 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
+    return matchesSearch && matchesRole && matchesSchool && matchesStatus;
+  });
 
-  // Pagination handlers
-  const handlePageChange = (page: number) => {
-    setPagination(prev => ({ ...prev, page }));
-  };
-
-  const handleItemsPerPageChange = (limit: number) => {
-    setPagination(prev => ({ ...prev, limit, page: 1 }));
-  };
-
-  const handleSearch = (search: string) => {
-    setPagination(prev => ({ ...prev, search, page: 1 }));
-  };
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedUsers = filteredUsers.slice(startIndex, startIndex + itemsPerPage);
 
   // Generate page numbers for pagination
   const getPageNumbers = () => {
-    const totalPages = result.total_pages;
-    const currentPage = result.page;
     const pages = [];
-    
     if (totalPages <= 7) {
       for (let i = 1; i <= totalPages; i++) {
         pages.push(i);
@@ -503,26 +372,41 @@ const SuperAdminUsers: React.FC = () => {
     return pages;
   };
 
-  const getRoleColor = (role: string) => {
-    switch (role) {
-      case 'super_admin': return 'bg-red-100 text-red-800 border border-red-200';
-      case 'school_admin': return 'bg-purple-100 text-purple-800 border border-purple-200';
-      case 'teacher': return 'bg-blue-100 text-blue-800 border border-blue-200';
-      case 'student': return 'bg-green-100 text-green-800 border border-green-200';
-      case 'parent': return 'bg-orange-100 text-orange-800 border border-orange-200';
-      default: return 'bg-gray-100 text-gray-800 border border-gray-200';
-    }
+  const getRoleLabel = (role: string) => {
+    const labels: Record<string, string> = {
+      super_admin: 'Super Admin',
+      school_admin: 'Admin Sekolah',
+      teacher: 'Guru',
+      student: 'Siswa',
+      parent: 'Orang Tua'
+    };
+    return labels[role] || role;
   };
 
-  const getRoleLabel = (role: string) => {
-    const option = roleOptions.find(opt => opt.value === role);
-    return option?.label || role;
+  const getRoleColor = (role: string) => {
+    const colors: Record<string, string> = {
+      super_admin: 'bg-red-100 text-red-800',
+      school_admin: 'bg-purple-100 text-purple-800',
+      teacher: 'bg-blue-100 text-blue-800',
+      student: 'bg-green-100 text-green-800',
+      parent: 'bg-orange-100 text-orange-800'
+    };
+    return colors[role] || 'bg-gray-100 text-gray-800';
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('id-ID', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
   };
 
   if (loading && users.length === 0) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <span className="ml-3 text-gray-600">Memuat data pengguna...</span>
       </div>
     );
   }
@@ -530,45 +414,25 @@ const SuperAdminUsers: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Manajemen Pengguna Global</h1>
-          <p className="text-gray-600 mt-1">Kelola semua pengguna di seluruh platform LMS</p>
+          <h1 className="text-2xl font-bold text-gray-900">Manajemen Pengguna Global</h1>
+          <p className="text-gray-600 mt-1">Kelola semua pengguna di seluruh platform</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button 
-            variant="outline" 
-            onClick={() => exportUsers('csv')}
-            className="flex items-center gap-2"
-          >
-            <Download className="h-4 w-4" />
-            Export CSV
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={() => exportUsers('excel')}
-            className="flex items-center gap-2"
-          >
-            <Download className="h-4 w-4" />
-            Export Excel
-          </Button>
-          <Button 
-            onClick={openAddModal} 
-            className="flex items-center gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Tambah Pengguna
-          </Button>
-        </div>
+        <Button onClick={openAddModal} className="flex items-center gap-2">
+          <Plus className="h-4 w-4" />
+          Tambah Pengguna
+        </Button>
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Total Pengguna</p>
-              <p className="text-2xl font-bold text-blue-600">{stats.totalUsers}</p>
+              <p className="text-2xl font-bold text-blue-600">{userStats.total_users}</p>
+              <p className="text-xs text-blue-600">+{userStats.recent_registrations} bulan ini</p>
             </div>
             <div className="p-3 bg-blue-100 rounded-full">
               <Users className="h-6 w-6 text-blue-600" />
@@ -580,10 +444,13 @@ const SuperAdminUsers: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Pengguna Aktif</p>
-              <p className="text-2xl font-bold text-green-600">{stats.activeUsers}</p>
+              <p className="text-2xl font-bold text-green-600">{userStats.active_users}</p>
+              <p className="text-xs text-green-600">
+                {userStats.total_users > 0 ? Math.round((userStats.active_users / userStats.total_users) * 100) : 0}% dari total
+              </p>
             </div>
             <div className="p-3 bg-green-100 rounded-full">
-              <User className="h-6 w-6 text-green-600" />
+              <CheckCircle className="h-6 w-6 text-green-600" />
             </div>
           </div>
         </Card>
@@ -591,12 +458,13 @@ const SuperAdminUsers: React.FC = () => {
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Pengguna Baru</p>
-              <p className="text-2xl font-bold text-purple-600">{stats.newUsersThisMonth}</p>
-              <p className="text-xs text-gray-500">Bulan ini</p>
+              <p className="text-sm font-medium text-gray-600">Total Siswa</p>
+              <p className="text-2xl font-bold text-purple-600">
+                {userStats.users_by_role.student || 0}
+              </p>
             </div>
             <div className="p-3 bg-purple-100 rounded-full">
-              <Plus className="h-6 w-6 text-purple-600" />
+              <User className="h-6 w-6 text-purple-600" />
             </div>
           </div>
         </Card>
@@ -604,11 +472,13 @@ const SuperAdminUsers: React.FC = () => {
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Sekolah</p>
-              <p className="text-2xl font-bold text-orange-600">{schools.length}</p>
+              <p className="text-sm font-medium text-gray-600">Total Guru</p>
+              <p className="text-2xl font-bold text-orange-600">
+                {userStats.users_by_role.teacher || 0}
+              </p>
             </div>
             <div className="p-3 bg-orange-100 rounded-full">
-              <Building2 className="h-6 w-6 text-orange-600" />
+              <Shield className="h-6 w-6 text-orange-600" />
             </div>
           </div>
         </Card>
@@ -617,86 +487,64 @@ const SuperAdminUsers: React.FC = () => {
       {/* Main Content */}
       <Card>
         {/* Search and Filters */}
-        <div className="p-4 sm:p-6 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
+        <div className="space-y-4 mb-6">
+          <div className="flex flex-col lg:flex-row lg:items-center gap-4">
             <div className="flex-1">
-              <h2 className="text-xl font-semibold text-gray-900 mb-1">Daftar Pengguna</h2>
-              <p className="text-sm text-gray-600">Kelola semua pengguna di platform LMS</p>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-              <div className="relative flex-1 sm:flex-none">
+              <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <input
                   type="text"
-                  placeholder="Cari nama, email, atau telepon..."
-                  className="w-full sm:w-64 pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all duration-200"
+                  placeholder="Cari nama atau email..."
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSearch(searchTerm)}
                 />
               </div>
-              <Button 
-                variant="outline" 
-                onClick={() => handleSearch(searchTerm)}
-                className="flex items-center gap-2"
-              >
-                <Search className="h-4 w-4" />
-                Cari
-              </Button>
             </div>
-          </div>
-
-          {/* Advanced Filters */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+            
+            <div className="flex gap-3">
               <select
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               >
                 <option value="all">Semua Role</option>
-                {roleOptions.map(option => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
-                ))}
+                <option value="super_admin">Super Admin</option>
+                <option value="school_admin">Admin Sekolah</option>
+                <option value="teacher">Guru</option>
+                <option value="student">Siswa</option>
+                <option value="parent">Orang Tua</option>
               </select>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Sekolah</label>
+              
               <select
                 value={schoolFilter}
                 onChange={(e) => setSchoolFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               >
                 <option value="all">Semua Sekolah</option>
                 {schools.map(school => (
                   <option key={school.id} value={school.id}>{school.name}</option>
                 ))}
               </select>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+              
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               >
                 <option value="all">Semua Status</option>
                 <option value="active">Aktif</option>
-                <option value="inactive">Tidak Aktif</option>
+                <option value="inactive">Nonaktif</option>
               </select>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Per Halaman</label>
+              
               <select
-                value={pagination.limit}
-                onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               >
-                <option value={5}>5 per halaman</option>
                 <option value={10}>10 per halaman</option>
                 <option value={25}>25 per halaman</option>
                 <option value={50}>50 per halaman</option>
@@ -704,450 +552,300 @@ const SuperAdminUsers: React.FC = () => {
               </select>
             </div>
           </div>
-
-          {/* Bulk Actions */}
-          {selectedUsers.size > 0 && (
-            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-blue-900">
-                  {selectedUsers.size} pengguna dipilih
-                </span>
-                <div className="flex gap-2">
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={() => setSelectedUsers(new Set())}
-                  >
-                    Batal Pilih
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="danger"
-                    onClick={() => setShowBulkModal(true)}
-                  >
-                    Hapus Terpilih
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mt-4">
-            <div className="text-sm text-gray-600 font-medium">
-              Menampilkan {((result.page - 1) * result.limit) + 1} - {Math.min(result.page * result.limit, result.total)} dari {result.total} pengguna
-            </div>
-            <div className="text-xs text-gray-500">
-              Filter aktif: {[
-                roleFilter !== 'all' && `Role: ${getRoleLabel(roleFilter)}`,
-                schoolFilter !== 'all' && `Sekolah: ${schools.find(s => s.id === schoolFilter)?.name}`,
-                statusFilter !== 'all' && `Status: ${statusFilter === 'active' ? 'Aktif' : 'Tidak Aktif'}`
-              ].filter(Boolean).join(', ') || 'Tidak ada'}
-            </div>
+          
+          <div className="text-sm text-gray-500">
+            Menampilkan {startIndex + 1} - {Math.min(startIndex + itemsPerPage, filteredUsers.length)} dari {filteredUsers.length} pengguna
           </div>
         </div>
 
-        {/* Desktop Table View */}
-        <div className="hidden lg:block overflow-x-auto">
+        {/* Users Table */}
+        <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
+            <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-4 text-left">
-                  <input
-                    type="checkbox"
-                    checked={selectedUsers.size === result.data.length && result.data.length > 0}
-                    onChange={toggleAllUsers}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  />
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Pengguna
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Role
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Sekolah
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Kontak
-                </th>
-                <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Aksi
-                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pengguna</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sekolah</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kontak</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Terdaftar</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-100">
-              {result.data.map((user) => (
-                <tr key={user.id} className="hover:bg-blue-50 transition-colors duration-150">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <input
-                      type="checkbox"
-                      checked={selectedUsers.has(user.id)}
-                      onChange={() => toggleUserSelection(user.id)}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-12 w-12">
-                        <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shadow-md">
-                          <User className="h-6 w-6 text-white" />
+            <tbody className="bg-white divide-y divide-gray-200">
+              {paginatedUsers.map((user) => {
+                const school = schools.find(s => s.id === user.school_id);
+                return (
+                  <tr key={user.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-10 w-10">
+                          <img
+                            className="h-10 w-10 rounded-full object-cover"
+                            src={user.avatar_url || 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=40&h=40&dpr=1'}
+                            alt={user.name}
+                          />
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                          <div className="text-sm text-gray-500">{user.email}</div>
                         </div>
                       </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-semibold text-gray-900">{user.name}</div>
-                        <div className="text-sm text-gray-500">{user.email}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(user.role)}`}>
+                        {getRoleLabel(user.role)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {school ? (
+                          <div className="flex items-center gap-1">
+                            <Building2 className="h-3 w-3 text-gray-400" />
+                            {school.name}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold shadow-sm ${getRoleColor(user.role)}`}>
-                      {getRoleLabel(user.role)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {user.school_id ? (
-                      <div className="flex items-center gap-1">
-                        <Building2 className="h-4 w-4" />
-                        {schools.find(s => s.id === user.school_id)?.name || 'Unknown'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-500">
+                        {user.phone && (
+                          <div className="flex items-center gap-1">
+                            <Phone className="h-3 w-3" />
+                            {user.phone}
+                          </div>
+                        )}
                       </div>
-                    ) : (
-                      <span className="text-gray-400">-</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold shadow-sm ${
-                      user.is_active ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-red-100 text-red-800 border border-red-200'
-                    }`}>
-                      {user.is_active ? 'Aktif' : 'Tidak Aktif'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium">
-                    {user.phone || '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex justify-end space-x-2">
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
                       <button
-                        onClick={() => openEditModal(user)}
-                        className="inline-flex items-center px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors duration-150 text-xs font-medium"
-                        title="Edit"
+                        onClick={() => toggleUserStatus(user)}
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full transition-colors ${
+                          user.is_active 
+                            ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                            : 'bg-red-100 text-red-800 hover:bg-red-200'
+                        }`}
                       >
-                        <Edit className="h-3 w-3 mr-1" />
-                        Edit
+                        {user.is_active ? 'Aktif' : 'Nonaktif'}
                       </button>
-                      <button
-                        onClick={() => openDeleteModal(user)}
-                        className="inline-flex items-center px-3 py-1.5 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors duration-150 text-xs font-medium"
-                        title="Hapus"
-                      >
-                        <Trash2 className="h-3 w-3 mr-1" />
-                        Hapus
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {formatDate(user.created_at)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => openDetailModal(user)}
+                          className="text-blue-600 hover:text-blue-900"
+                          title="Lihat Detail"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => openEditModal(user)}
+                          className="text-green-600 hover:text-green-900"
+                          title="Edit"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => openDeleteModal(user)}
+                          className="text-red-600 hover:text-red-900"
+                          title="Hapus"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
 
-        {/* Mobile Card View */}
-        <div className="lg:hidden space-y-4 p-4">
-          {result.data.map((user) => (
-            <div key={user.id} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow duration-200">
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={selectedUsers.has(user.id)}
-                    onChange={() => toggleUserSelection(user.id)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mr-3"
-                  />
-                  <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shadow-md mr-3">
-                    <User className="h-6 w-6 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-semibold text-gray-900">{user.name}</h3>
-                    <p className="text-xs text-gray-500">{user.email}</p>
-                  </div>
-                </div>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => openEditModal(user)}
-                    className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors duration-150"
-                    title="Edit"
-                  >
-                    <Edit className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => openDeleteModal(user)}
-                    className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors duration-150"
-                    title="Hapus"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-3 text-xs">
-                <div>
-                  <span className="text-gray-500 font-medium">Role:</span>
-                  <div className="mt-1">
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getRoleColor(user.role)}`}>
-                      {getRoleLabel(user.role)}
-                    </span>
-                  </div>
-                </div>
-                <div>
-                  <span className="text-gray-500 font-medium">Status:</span>
-                  <div className="mt-1">
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                      user.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}>
-                      {user.is_active ? 'Aktif' : 'Tidak Aktif'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              
-              {user.school_id && (
-                <div className="mt-3 pt-3 border-t border-gray-100">
-                  <span className="text-gray-500 font-medium text-xs">Sekolah:</span>
-                  <p className="text-sm text-gray-700 mt-1 flex items-center gap-1">
-                    <Building2 className="h-3 w-3" />
-                    {schools.find(s => s.id === user.school_id)?.name || 'Unknown'}
-                  </p>
-                </div>
-              )}
-              
-              {user.phone && (
-                <div className="mt-2">
-                  <span className="text-gray-500 font-medium text-xs">Kontak:</span>
-                  <p className="text-sm text-gray-700 mt-1">{user.phone}</p>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-
-        {result.data.length === 0 && (
-          <div className="text-center py-12 bg-white">
-            <Users className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">Tidak ada pengguna ditemukan</h3>
-            <p className="mt-1 text-sm text-gray-500">
-              {searchTerm || roleFilter !== 'all' || schoolFilter !== 'all' || statusFilter !== 'all'
-                ? 'Coba ubah filter pencarian Anda.'
-                : 'Mulai dengan menambahkan pengguna baru.'}
-            </p>
-          </div>
-        )}
-
-        {/* Enhanced Pagination */}
-        {result.total > 0 && (
-          <div className="px-4 py-4 border-t border-gray-100 bg-gray-50">
-            {/* Mobile Pagination */}
-            <div className="flex items-center justify-between lg:hidden">
-              <button
-                onClick={() => handlePageChange(Math.max(result.page - 1, 1))}
-                disabled={result.page <= 1}
-                className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ChevronLeft className="h-4 w-4 mr-1" />
-                Sebelumnya
-              </button>
-              <span className="text-sm text-gray-600 font-medium">
-                {result.page} / {result.total_pages}
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-700">
+                Halaman {currentPage} dari {totalPages}
               </span>
-              <button
-                onClick={() => handlePageChange(Math.min(result.page + 1, result.total_pages))}
-                disabled={result.page >= result.total_pages}
-                className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Selanjutnya
-                <ChevronRight className="h-4 w-4 ml-1" />
-              </button>
             </div>
+            
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage <= 1}
+                className="p-2 text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
 
-            {/* Desktop Pagination */}
-            <div className="hidden lg:flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-700 font-medium">
-                  Halaman {result.page} dari {result.total_pages}
-                </span>
-              </div>
-              
-              <div className="flex items-center gap-1">
-                {/* Previous Button */}
+              {getPageNumbers().map((page, index) => (
                 <button
-                  onClick={() => handlePageChange(Math.max(result.page - 1, 1))}
-                  disabled={result.page <= 1}
-                  className="p-2 text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg hover:bg-white transition-colors duration-150"
+                  key={index}
+                  onClick={() => typeof page === 'number' ? setCurrentPage(page) : undefined}
+                  disabled={page === '...'}
+                  className={`px-3 py-1 text-sm rounded-md ${
+                    page === currentPage
+                      ? 'bg-primary-600 text-white'
+                      : page === '...'
+                      ? 'text-gray-400 cursor-default'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
                 >
-                  <ChevronLeft className="h-5 w-5" />
+                  {page}
                 </button>
+              ))}
 
-                {/* Page Numbers */}
-                {getPageNumbers().map((page, index) => (
-                  <button
-                    key={index}
-                    onClick={() => typeof page === 'number' ? handlePageChange(page) : undefined}
-                    disabled={page === '...'}
-                    className={`px-3 py-2 text-sm rounded-lg font-medium transition-colors duration-150 ${
-                      page === result.page
-                        ? 'bg-blue-600 text-white shadow-sm'
-                        : page === '...'
-                        ? 'text-gray-400 cursor-default'
-                        : 'text-gray-700 hover:bg-white hover:shadow-sm'
-                    }`}
-                  >
-                    {page}
-                  </button>
-                ))}
-
-                {/* Next Button */}
-                <button
-                  onClick={() => handlePageChange(Math.min(result.page + 1, result.total_pages))}
-                  disabled={result.page >= result.total_pages}
-                  className="p-2 text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg hover:bg-white transition-colors duration-150"
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </button>
-              </div>
+              <button
+                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage >= totalPages}
+                className="p-2 text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
             </div>
           </div>
         )}
       </Card>
 
-      {/* Add Modal */}
+      {/* Add User Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-medium text-gray-900">Tambah Pengguna Baru</h3>
-              <button onClick={closeAddModal} className="text-gray-400 hover:text-gray-600">
+              <button onClick={closeModals} className="text-gray-400 hover:text-gray-600">
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <form onSubmit={(e) => { e.preventDefault(); handleAdd(); }} className="space-y-4">
+            
+            <form onSubmit={(e) => { e.preventDefault(); handleAddUser(); }} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap *</label>
                   <input
                     type="text"
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
-                      formErrors.name ? 'border-red-300' : 'border-gray-300'
+                    value={formData.name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                      errors.name ? 'border-red-300' : 'border-gray-300'
                     }`}
                     placeholder="Masukkan nama lengkap"
                   />
-                  {formErrors.name && <p className="mt-1 text-sm text-red-600">{formErrors.name}</p>}
+                  {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
                 </div>
+                
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
                   <input
                     type="email"
-                    value={form.email}
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
-                      formErrors.email ? 'border-red-300' : 'border-gray-300'
+                    value={formData.email}
+                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                      errors.email ? 'border-red-300' : 'border-gray-300'
                     }`}
-                    placeholder="Masukkan email"
+                    placeholder="user@example.com"
                   />
-                  {formErrors.email && <p className="mt-1 text-sm text-red-600">{formErrors.email}</p>}
+                  {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
                 </div>
               </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Password *</label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      value={form.password}
-                      onChange={(e) => setForm({ ...form, password: e.target.value })}
-                      className={`w-full px-3 py-2 pr-10 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
-                        formErrors.password ? 'border-red-300' : 'border-gray-300'
-                      }`}
-                      placeholder="Masukkan password"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                  {formErrors.password && <p className="mt-1 text-sm text-red-600">{formErrors.password}</p>}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Password *</label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={formData.password}
+                    onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                    className={`w-full px-3 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                      errors.password ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                    placeholder="Minimal 6 karakter"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4 text-gray-400" /> : <Eye className="h-4 w-4 text-gray-400" />}
+                  </button>
                 </div>
+                {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Role *</label>
                   <select
-                    value={form.role}
-                    onChange={(e) => setForm({ ...form, role: e.target.value as UserFormData['role'] })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    value={formData.role}
+                    onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value as UserFormData['role'] }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   >
-                    {roleOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
+                    <option value="student">Siswa</option>
+                    <option value="teacher">Guru</option>
+                    <option value="parent">Orang Tua</option>
+                    <option value="school_admin">Admin Sekolah</option>
+                    <option value="super_admin">Super Admin</option>
                   </select>
                 </div>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">No. Telepon</label>
-                  <input
-                    type="tel"
-                    value={form.phone}
-                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
-                      formErrors.phone ? 'border-red-300' : 'border-gray-300'
-                    }`}
-                    placeholder="Masukkan nomor telepon"
-                  />
-                  {formErrors.phone && <p className="mt-1 text-sm text-red-600">{formErrors.phone}</p>}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Sekolah</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Sekolah {formData.role !== 'super_admin' && '*'}
+                  </label>
                   <select
-                    value={form.school_id || ''}
-                    onChange={(e) => setForm({ ...form, school_id: e.target.value || undefined })}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
-                      formErrors.school_id ? 'border-red-300' : 'border-gray-300'
+                    value={formData.school_id}
+                    onChange={(e) => setFormData(prev => ({ ...prev, school_id: e.target.value }))}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                      errors.school_id ? 'border-red-300' : 'border-gray-300'
                     }`}
-                    disabled={form.role === 'super_admin'}
+                    disabled={formData.role === 'super_admin'}
                   >
                     <option value="">Pilih Sekolah</option>
-                    {schools.map(school => (
+                    {schools.filter(s => s.is_active).map(school => (
                       <option key={school.id} value={school.id}>{school.name}</option>
                     ))}
                   </select>
-                  {formErrors.school_id && <p className="mt-1 text-sm text-red-600">{formErrors.school_id}</p>}
+                  {errors.school_id && <p className="mt-1 text-sm text-red-600">{errors.school_id}</p>}
                 </div>
               </div>
-              
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="is_active"
-                  checked={form.is_active}
-                  onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <label htmlFor="is_active" className="ml-2 block text-sm text-gray-900">
-                  Pengguna Aktif
-                </label>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Nomor Telepon</label>
+                  <input
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                      errors.phone ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                    placeholder="081234567890"
+                  />
+                  {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone}</p>}
+                </div>
+                
+                <div className="flex items-center">
+                  <input
+                    id="add_is_active"
+                    type="checkbox"
+                    checked={formData.is_active}
+                    onChange={(e) => setFormData(prev => ({ ...prev, is_active: e.target.checked }))}
+                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="add_is_active" className="ml-2 block text-sm text-gray-900">
+                    Status Aktif
+                  </label>
+                </div>
               </div>
-              
-              <div className="flex justify-end space-x-3 mt-6">
-                <Button variant="outline" onClick={closeAddModal}>
+
+              <div className="flex justify-end gap-3 pt-4">
+                <Button type="button" variant="secondary" onClick={closeModals}>
                   Batal
                 </Button>
                 <Button type="submit" disabled={loading}>
@@ -1159,137 +857,144 @@ const SuperAdminUsers: React.FC = () => {
         </div>
       )}
 
-      {/* Edit Modal */}
+      {/* Edit User Modal */}
       {showEditModal && selectedUser && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-medium text-gray-900">Edit Pengguna</h3>
-              <button onClick={closeEditModal} className="text-gray-400 hover:text-gray-600">
+              <button onClick={closeModals} className="text-gray-400 hover:text-gray-600">
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <form onSubmit={(e) => { e.preventDefault(); handleEdit(); }} className="space-y-4">
+            
+            <form onSubmit={(e) => { e.preventDefault(); handleEditUser(); }} className="space-y-4">
+              {/* Same form fields as Add Modal, but password is optional */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap *</label>
                   <input
                     type="text"
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
-                      formErrors.name ? 'border-red-300' : 'border-gray-300'
+                    value={formData.name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                      errors.name ? 'border-red-300' : 'border-gray-300'
                     }`}
                     placeholder="Masukkan nama lengkap"
                   />
-                  {formErrors.name && <p className="mt-1 text-sm text-red-600">{formErrors.name}</p>}
+                  {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
                 </div>
+                
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
                   <input
                     type="email"
-                    value={form.email}
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
-                      formErrors.email ? 'border-red-300' : 'border-gray-300'
+                    value={formData.email}
+                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                      errors.email ? 'border-red-300' : 'border-gray-300'
                     }`}
-                    placeholder="Masukkan email"
+                    placeholder="user@example.com"
                   />
-                  {formErrors.email && <p className="mt-1 text-sm text-red-600">{formErrors.email}</p>}
+                  {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
                 </div>
               </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Password (kosongkan jika tidak ingin mengubah)</label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      value={form.password}
-                      onChange={(e) => setForm({ ...form, password: e.target.value })}
-                      className={`w-full px-3 py-2 pr-10 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
-                        formErrors.password ? 'border-red-300' : 'border-gray-300'
-                      }`}
-                      placeholder="Masukkan password baru"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                  {formErrors.password && <p className="mt-1 text-sm text-red-600">{formErrors.password}</p>}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Password Baru (Kosongkan jika tidak ingin mengubah)</label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={formData.password}
+                    onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                    className={`w-full px-3 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                      errors.password ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                    placeholder="Minimal 6 karakter"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4 text-gray-400" /> : <Eye className="h-4 w-4 text-gray-400" />}
+                  </button>
                 </div>
+                {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Role *</label>
                   <select
-                    value={form.role}
-                    onChange={(e) => setForm({ ...form, role: e.target.value as UserFormData['role'] })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    value={formData.role}
+                    onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value as UserFormData['role'] }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   >
-                    {roleOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
+                    <option value="student">Siswa</option>
+                    <option value="teacher">Guru</option>
+                    <option value="parent">Orang Tua</option>
+                    <option value="school_admin">Admin Sekolah</option>
+                    <option value="super_admin">Super Admin</option>
                   </select>
                 </div>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">No. Telepon</label>
-                  <input
-                    type="tel"
-                    value={form.phone}
-                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
-                      formErrors.phone ? 'border-red-300' : 'border-gray-300'
-                    }`}
-                    placeholder="Masukkan nomor telepon"
-                  />
-                  {formErrors.phone && <p className="mt-1 text-sm text-red-600">{formErrors.phone}</p>}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Sekolah</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Sekolah {formData.role !== 'super_admin' && '*'}
+                  </label>
                   <select
-                    value={form.school_id || ''}
-                    onChange={(e) => setForm({ ...form, school_id: e.target.value || undefined })}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
-                      formErrors.school_id ? 'border-red-300' : 'border-gray-300'
+                    value={formData.school_id}
+                    onChange={(e) => setFormData(prev => ({ ...prev, school_id: e.target.value }))}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                      errors.school_id ? 'border-red-300' : 'border-gray-300'
                     }`}
-                    disabled={form.role === 'super_admin'}
+                    disabled={formData.role === 'super_admin'}
                   >
                     <option value="">Pilih Sekolah</option>
-                    {schools.map(school => (
+                    {schools.filter(s => s.is_active).map(school => (
                       <option key={school.id} value={school.id}>{school.name}</option>
                     ))}
                   </select>
-                  {formErrors.school_id && <p className="mt-1 text-sm text-red-600">{formErrors.school_id}</p>}
+                  {errors.school_id && <p className="mt-1 text-sm text-red-600">{errors.school_id}</p>}
                 </div>
               </div>
-              
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="edit_is_active"
-                  checked={form.is_active}
-                  onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <label htmlFor="edit_is_active" className="ml-2 block text-sm text-gray-900">
-                  Pengguna Aktif
-                </label>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Nomor Telepon</label>
+                  <input
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                      errors.phone ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                    placeholder="081234567890"
+                  />
+                  {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone}</p>}
+                </div>
+                
+                <div className="flex items-center">
+                  <input
+                    id="edit_is_active"
+                    type="checkbox"
+                    checked={formData.is_active}
+                    onChange={(e) => setFormData(prev => ({ ...prev, is_active: e.target.checked }))}
+                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="edit_is_active" className="ml-2 block text-sm text-gray-900">
+                    Status Aktif
+                  </label>
+                </div>
               </div>
-              
-              <div className="flex justify-end space-x-3 mt-6">
-                <Button variant="outline" onClick={closeEditModal}>
+
+              <div className="flex justify-end gap-3 pt-4">
+                <Button type="button" variant="secondary" onClick={closeModals}>
                   Batal
                 </Button>
                 <Button type="submit" disabled={loading}>
-                  {loading ? 'Menyimpan...' : 'Simpan Perubahan'}
+                  {loading ? 'Menyimpan...' : 'Update Pengguna'}
                 </Button>
               </div>
             </form>
@@ -1297,29 +1002,49 @@ const SuperAdminUsers: React.FC = () => {
         </div>
       )}
 
-      {/* Delete Modal */}
+      {/* Delete User Modal */}
       {showDeleteModal && selectedUser && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-medium text-gray-900">Konfirmasi Hapus</h3>
-              <button onClick={closeDeleteModal} className="text-gray-400 hover:text-gray-600">
+              <button onClick={closeModals} className="text-gray-400 hover:text-gray-600">
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <div className="mb-4">
-              <p className="text-sm text-gray-500">
-                Apakah Anda yakin ingin menghapus pengguna <strong>{selectedUser.name}</strong>?
+            
+            <div className="mb-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-3 bg-red-100 rounded-full">
+                  <AlertCircle className="h-6 w-6 text-red-600" />
+                </div>
+                <div>
+                  <h4 className="font-medium text-gray-900">Hapus Pengguna</h4>
+                  <p className="text-sm text-gray-600">Tindakan ini tidak dapat dibatalkan</p>
+                </div>
+              </div>
+              
+              <p className="text-sm text-gray-600">
+                Apakah Anda yakin ingin menghapus pengguna <strong>{selectedUser.name}</strong> ({selectedUser.email})?
               </p>
-              <p className="text-sm text-red-600 mt-2">
-                Tindakan ini tidak dapat dibatalkan dan akan menghapus semua data terkait.
-              </p>
+              
+              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-sm text-yellow-800">
+                  <strong>Peringatan:</strong> Menghapus pengguna akan menghapus semua data terkait seperti nilai, tugas, dan aktivitas.
+                </p>
+              </div>
             </div>
-            <div className="flex justify-end space-x-3">
-              <Button variant="outline" onClick={closeDeleteModal}>
+            
+            <div className="flex justify-end gap-3">
+              <Button type="button" variant="secondary" onClick={closeModals}>
                 Batal
               </Button>
-              <Button variant="danger" onClick={handleDelete} disabled={loading}>
+              <Button 
+                type="button" 
+                variant="danger" 
+                onClick={handleDeleteUser}
+                disabled={loading}
+              >
                 {loading ? 'Menghapus...' : 'Hapus Pengguna'}
               </Button>
             </div>
@@ -1327,30 +1052,96 @@ const SuperAdminUsers: React.FC = () => {
         </div>
       )}
 
-      {/* Bulk Delete Modal */}
-      {showBulkModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium text-gray-900">Konfirmasi Hapus Massal</h3>
-              <button onClick={() => setShowBulkModal(false)} className="text-gray-400 hover:text-gray-600">
+      {/* User Detail Modal */}
+      {showDetailModal && selectedUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-medium text-gray-900">Detail Pengguna</h3>
+              <button onClick={closeModals} className="text-gray-400 hover:text-gray-600">
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <div className="mb-4">
-              <p className="text-sm text-gray-500">
-                Apakah Anda yakin ingin menghapus <strong>{selectedUsers.size}</strong> pengguna yang dipilih?
-              </p>
-              <p className="text-sm text-red-600 mt-2">
-                Tindakan ini tidak dapat dibatalkan dan akan menghapus semua data terkait.
-              </p>
+            
+            <div className="space-y-6">
+              {/* User Profile */}
+              <div className="flex items-center gap-6">
+                <img
+                  className="h-20 w-20 rounded-full object-cover"
+                  src={selectedUser.avatar_url || 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=80&h=80&dpr=1'}
+                  alt={selectedUser.name}
+                />
+                <div>
+                  <h4 className="text-xl font-semibold text-gray-900">{selectedUser.name}</h4>
+                  <p className="text-gray-600">{selectedUser.email}</p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(selectedUser.role)}`}>
+                      {getRoleLabel(selectedUser.role)}
+                    </span>
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                      selectedUser.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
+                      {selectedUser.is_active ? 'Aktif' : 'Nonaktif'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* User Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <h5 className="font-medium text-gray-900">Informasi Kontak</h5>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-gray-400" />
+                      <span className="text-sm text-gray-900">{selectedUser.email}</span>
+                    </div>
+                    {selectedUser.phone && (
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-gray-400" />
+                        <span className="text-sm text-gray-900">{selectedUser.phone}</span>
+                      </div>
+                    )}
+                    {selectedUser.school_id && (
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-4 w-4 text-gray-400" />
+                        <span className="text-sm text-gray-900">
+                          {schools.find(s => s.id === selectedUser.school_id)?.name || 'Unknown School'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <h5 className="font-medium text-gray-900">Informasi Sistem</h5>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-xs text-gray-500">ID Pengguna</label>
+                      <p className="text-sm text-gray-900 font-mono">{selectedUser.id}</p>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500">Terdaftar</label>
+                      <p className="text-sm text-gray-900">{formatDate(selectedUser.created_at)}</p>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500">Terakhir Diperbarui</label>
+                      <p className="text-sm text-gray-900">{formatDate(selectedUser.updated_at)}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="flex justify-end space-x-3">
-              <Button variant="outline" onClick={() => setShowBulkModal(false)}>
-                Batal
+            
+            <div className="flex justify-end gap-3 pt-6">
+              <Button type="button" variant="secondary" onClick={closeModals}>
+                Tutup
               </Button>
-              <Button variant="danger" onClick={handleBulkDelete} disabled={loading}>
-                {loading ? 'Menghapus...' : `Hapus ${selectedUsers.size} Pengguna`}
+              <Button type="button" onClick={() => {
+                closeModals();
+                openEditModal(selectedUser);
+              }}>
+                Edit Pengguna
               </Button>
             </div>
           </div>
